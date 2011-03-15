@@ -9,9 +9,12 @@
 
 #include "maxCMPExport.h"
 
+
 #include <list>
 using namespace std;
 
+extern std::list<string> lstNames;
+extern std::list<string> MaterialNames;
 //
 // option flags
 //
@@ -28,27 +31,44 @@ private:
     int     m_nFlags;
     CString m_sPathName;
 
-	CTreeCtrl * tree;
-	UTF * utf;
+
 	list<MMESH *> * meshList;
+	list<GLIST *> * nodeList;
+	
 	char fileName[1000];
 	
-	int num_meshes();
-
-	int iLODs;
+	int create_vwiredata(HTREEITEM,MMESH * mesh);
+	void create_hardpoints(HTREEITEM);
+	
+	void calculate_position( float * pos, MMESH * mesh);
+	void calculate_orientation( float * matrix, float * pos, char * name);
+	int VertQuantity();
+	
+	
 
 	EXPORT_CMPNT_OPTION cmpnt_mode;
 
 public:
+	
 	cDlgOptions(CWnd* pParent = NULL);
+	int num_meshes();
+	int iLODs;
 
 public:
+
+	
+	CTreeCtrl * tree;
+	UTF * utf;
+	CTreeCtrl * tree2;
+	UTF * utf2;
     CString GetPathName ();
     int GetOptionFlags ();
 	void SetMesh(list<MMESH *> *);
+	void SetGroup(list<GLIST *> *);
 	void SetFileName(char * fileName);
 	void SetComponentMode(EXPORT_CMPNT_OPTION);
 	void SetLODs(int);
+	int create_groups(HTREEITEM, GLIST * glist);
 	
 	//{{AFX_VIRTUAL(cDlgOptions)
 	protected:

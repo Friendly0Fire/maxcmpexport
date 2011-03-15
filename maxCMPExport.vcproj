@@ -1,11 +1,10 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9,00"
+	Version="8.00"
 	Name="maxCMPExport"
 	ProjectGUID="{E7CB76AA-6113-46BA-8EBC-8AE1D2B81210}"
 	RootNamespace="maxCMPExport"
-	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -23,7 +22,7 @@
 			OutputDirectory=".\Release"
 			IntermediateDirectory=".\Release"
 			ConfigurationType="2"
-			UseOfMFC="1"
+			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
 			<Tool
@@ -56,12 +55,12 @@
 				OmitFramePointers="false"
 				EnableFiberSafeOptimizations="true"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="&quot;C:\Program Files (x86)\Autodesk\Autodesk 3ds Max 2011 SDK\maxsdk\include&quot;;&quot;C:\Program Files (x86)\Autodesk\Autodesk 3ds Max 2011 SDK\maxsdk\include\IGame&quot;"
+				AdditionalIncludeDirectories=".\midl\Win32;E:\Program Files\Autodesk\3ds Max 9 SDK\include"
 				PreprocessorDefinitions="_SECURE_SCL=0;WIN32;NDEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;ISOLATION_AWARE_ENABLED=1"
 				StringPooling="true"
 				ExceptionHandling="2"
 				BasicRuntimeChecks="0"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				BufferSecurityCheck="false"
 				EnableFunctionLevelLinking="true"
 				EnableEnhancedInstructionSet="1"
@@ -69,7 +68,7 @@
 				PrecompiledHeaderFile=".\Release\maxCMPExport.pch"
 				AssemblerListingLocation=".\Release\"
 				ObjectFile=".\Release\"
-				ProgramDataBaseFileName="maxCMPExport.pdb"
+				ProgramDataBaseFileName="E:\Documents and Settings\Chris\Desktop\VC_Projects\maxCMPExport.dle.pdb"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				Detect64BitPortabilityProblems="true"
@@ -90,13 +89,13 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="  "
-				AdditionalDependencies="odbc32.lib odbccp32.lib comctl32.lib core.lib geom.lib gfx.lib igame.lib mesh.lib maxutil.lib maxscrpt.lib paramblk2.lib"
-				OutputFile="C:\Program Files (x86)\Autodesk\3ds Max 2011\stdplugs\maxCMPExport.dle"
+				AdditionalDependencies="odbc32.lib odbccp32.lib comctl32.lib core.lib geom.lib gfx.lib mesh.lib maxutil.lib maxscrpt.lib paramblk2.lib "
+				OutputFile="E:\Documents and Settings\Chris\Desktop\VC_Projects\maxCMPExport.dle"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="&quot;C:\Program Files (x86)\Autodesk\Autodesk 3ds Max 2011 SDK\maxsdk\lib&quot;"
+				AdditionalLibraryDirectories="E:\Program Files\Autodesk\3ds Max 9 SDK\lib"
 				GenerateManifest="true"
-				IgnoreDefaultLibraryNames=""
+				IgnoreDefaultLibraryNames="libcp.lib,libci.lib,msvcirt.lib,libcmt.lib,libcmtd.lib,msvcrtd.lib"
 				ModuleDefinitionFile=".\maxCMPExport.def"
 				ProgramDatabaseFile="E:\Documents and Settings\Chris\Desktop\VC_Projects\maxCMPExport.dle.pdb"
 				SubSystem="2"
@@ -105,8 +104,6 @@
 				OptimizeForWindows98="1"
 				SetChecksum="true"
 				BaseAddress="0x16860000"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				ImportLibrary=".\Release\maxCMPExport.lib"
 				TargetMachine="1"
 			/>
@@ -127,6 +124,9 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -167,10 +167,10 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="&quot;C:\Program Files (x86)\Autodesk\Autodesk 3ds Max 2011 SDK\maxsdk\include&quot;;&quot;C:\Program Files (x86)\Autodesk\Autodesk 3ds Max 2011 SDK\maxsdk\include\IGame&quot;;&quot;C:\Program Files (x86)\Autodesk\Autodesk 3ds Max 2011 SDK\maxsdk\lib&quot;"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\Autodesk\3ds Max 9 SDK\maxsdk&quot;;.\midl\Win32;&quot;C:\Program Files\Autodesk\3ds Max 9 SDK\maxsdk\include&quot;;&quot;C:\Program Files\Autodesk\3ds Max 9 SDK\maxsdk\include\IGame&quot;;&quot;C:\Program Files\Autodesk\3ds Max 9 SDK\maxsdk\lib&quot;"
 				PreprocessorDefinitions="_HYBRID;IS_HYBRID;_SECURE_SCL=0;WIN32;_WINDOWS;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;ISOLATION_AWARE_ENABLED=1"
 				ExceptionHandling="2"
-				BasicRuntimeChecks="0"
+				BasicRuntimeChecks="3"
 				RuntimeLibrary="0"
 				BufferSecurityCheck="true"
 				EnableEnhancedInstructionSet="1"
@@ -179,11 +179,11 @@
 				PrecompiledHeaderFile=".\Hybrid\maxCMPExport.pch"
 				AssemblerListingLocation=".\Hybrid\"
 				ObjectFile=".\Hybrid\"
-				ProgramDataBaseFileName="C:\Program Files (x86)\Autodesk\3ds Max 2011\stdplugs\maxCMPExport.dle.pdb"
+				ProgramDataBaseFileName="E:\Program Files\Autodesk\3ds Max 9\stdplugs\maxCMPExport.dle.pdb"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				Detect64BitPortabilityProblems="true"
-				DebugInformationFormat="3"
+				DebugInformationFormat="4"
 				CompileAs="0"
 				UseFullPaths="true"
 			/>
@@ -201,11 +201,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
-				AdditionalDependencies="odbc32.lib odbccp32.lib comctl32.lib core.lib geom.lib gfx.lib igame.lib mesh.lib maxutil.lib maxscrpt.lib paramblk2.lib"
-				OutputFile="C:\Program Files (x86)\Autodesk\3ds Max 2011\stdplugs\maxCMPExport.dle"
+				AdditionalOptions="&#x0D;&#x0A;&#x0D;&#x0A;"
+				AdditionalDependencies="odbc32.lib odbccp32.lib comctl32.lib core.lib geom.lib gfx.lib mesh.lib maxutil.lib maxscrpt.lib paramblk2.lib igame.lib msxml2.lib"
+				OutputFile="C:\Program Files\Autodesk\3ds Max 9\plugins\maxCMPExport.dle"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="&quot;C:\Program Files (x86)\Autodesk\Autodesk 3ds Max 2011 SDK\maxsdk\lib&quot;"
+				AdditionalLibraryDirectories="&quot;D:\Program Files\Autodesk\3ds Max 9 SDK\maxsdk\lib&quot;"
 				GenerateManifest="true"
 				IgnoreDefaultLibraryNames=""
 				ModuleDefinitionFile=".\maxCMPExport.def"
@@ -213,8 +214,6 @@
 				ProgramDatabaseFile="E:\Program Files\Autodesk\3ds Max 9\stdplugs\maxCMPExport.dle.pdb"
 				SubSystem="2"
 				BaseAddress="0x16860000"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				ImportLibrary=".\Hybrid\maxCMPExport.lib"
 				TargetMachine="1"
 			/>
@@ -237,6 +236,9 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -245,7 +247,7 @@
 			OutputDirectory=".\Debug"
 			IntermediateDirectory=".\Debug"
 			ConfigurationType="2"
-			UseOfMFC="1"
+			UseOfMFC="2"
 			ATLMinimizesCRunTimeLibraryUsage="false"
 			>
 			<Tool
@@ -273,18 +275,18 @@
 				AdditionalOptions="/D &quot;WIN32&quot;"
 				Optimization="0"
 				WholeProgramOptimization="false"
-				AdditionalIncludeDirectories="&quot;C:\Program Files (x86)\Autodesk\Autodesk 3ds Max 2011 SDK\maxsdk\include&quot;;&quot;C:\Program Files (x86)\Autodesk\Autodesk 3ds Max 2011 SDK\maxsdk\include\IGame&quot;"
+				AdditionalIncludeDirectories=".\midl\Win32;&quot;E:\Program Files\Autodesk\3ds Max 9 SDK\maxsdk\include&quot;"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;_CRT_SECURE_NO_DEPRECATE;_CRT_NONSTDC_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;ISOLATION_AWARE_ENABLED=1"
 				ExceptionHandling="2"
 				BasicRuntimeChecks="3"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				BufferSecurityCheck="true"
 				EnableEnhancedInstructionSet="1"
 				FloatingPointModel="2"
 				PrecompiledHeaderFile=".\Debug\maxCMPExport.pch"
 				AssemblerListingLocation=".\Debug\"
 				ObjectFile=".\Debug\"
-				ProgramDataBaseFileName="maxCMPExport.pdb"
+				ProgramDataBaseFileName="E:\Documents and Settings\Chris\Desktop\VC_Projects\maxCMPExport.dle.pdb"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 				Detect64BitPortabilityProblems="true"
@@ -307,20 +309,18 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/FORCE:MULTIPLE"
-				AdditionalDependencies="odbc32.lib odbccp32.lib comctl32.lib core.lib geom.lib gfx.lib igame.lib mesh.lib maxutil.lib maxscrpt.lib paramblk2.lib"
-				OutputFile="C:\Program Files (x86)\Autodesk\3ds Max 2011\stdplugs\maxCMPExport.dle"
+				AdditionalDependencies="odbc32.lib odbccp32.lib comctl32.lib core.lib geom.lib gfx.lib mesh.lib maxutil.lib maxscrpt.lib paramblk2.lib igame.lib"
+				OutputFile="E:\Documents and Settings\Chris\Desktop\VC_Projects\maxCMPExport.dle"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="&quot;C:\Program Files (x86)\Autodesk\Autodesk 3ds Max 2011 SDK\maxsdk\lib&quot;"
+				AdditionalLibraryDirectories="C:\3dsftk3\lib;&quot;E:\Program Files\Autodesk\3ds Max 9 SDK\lib&quot;"
 				GenerateManifest="true"
-				IgnoreDefaultLibraryNames=""
+				IgnoreDefaultLibraryNames="libcp.lib;libci.lib;msvcirt.lib;libcmt.lib;libcmtd.lib;msvcrt.lib"
 				ModuleDefinitionFile=".\maxCMPExport.def"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="E:\Documents and Settings\Chris\Desktop\VC_Projects\maxCMPExport.dle.pdb"
 				SubSystem="2"
 				BaseAddress="0x16860000"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				ImportLibrary=".\Debug\maxCMPExport.lib"
 				TargetMachine="1"
 			/>
@@ -341,6 +341,9 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -765,6 +768,10 @@
 				>
 			</File>
 		</Filter>
+		<File
+			RelativePath=".\core.lib"
+			>
+		</File>
 	</Files>
 	<Globals>
 		<Global

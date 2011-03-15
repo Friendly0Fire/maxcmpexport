@@ -27,6 +27,8 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	BOOL bTangents;
+	BOOL bVColor;
 	EXPORT_CMPNT_OPTION eRadioCmpnts;
 	int iLOD;
+	afx_msg void OnBnClickedTangents();
 };
