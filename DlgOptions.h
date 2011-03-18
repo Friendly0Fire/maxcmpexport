@@ -8,13 +8,15 @@
 #endif // _MSC_VER > 1000
 
 #include "maxCMPExport.h"
-
+#include "ExportOptions.h"
 
 #include <list>
 using namespace std;
 
 extern std::list<string> lstNames;
 extern std::list<string> MaterialNames;
+
+
 //
 // option flags
 //
@@ -37,7 +39,7 @@ private:
 	
 	char fileName[1000];
 	
-	int create_vwiredata(HTREEITEM,MMESH * mesh);
+	int create_vwiredata(HTREEITEM, const TCHAR* nameInList);
 	void create_hardpoints(HTREEITEM);
 	
 	void calculate_position( float * pos, MMESH * mesh);
@@ -53,6 +55,8 @@ public:
 	cDlgOptions(CWnd* pParent = NULL);
 	int num_meshes();
 	int iLODs;
+	int sWire;
+	
 
 public:
 
@@ -68,6 +72,7 @@ public:
 	void SetFileName(char * fileName);
 	void SetComponentMode(EXPORT_CMPNT_OPTION);
 	void SetLODs(int);
+	void SetWire(int);
 	int create_groups(HTREEITEM, GLIST * glist);
 	
 	//{{AFX_VIRTUAL(cDlgOptions)
