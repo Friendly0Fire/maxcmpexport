@@ -254,6 +254,8 @@ CMaxPlugInApp::CMaxPlugInApp()
 {
 }
 
+static ExportOptions OptionsDlgExport;
+
 //--- maxCMPExport -------------------------------------------------------
 #include <list>
 using namespace std;
@@ -344,12 +346,6 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 	IGameScene *nMeshes;
 	nMeshes = GetIGameInterface();
 	nMeshes->SetStaticFrame(0);
-
-	ExportOptions OptionsDlgExport(NULL);
-	
-	OptionsDlgExport.DoModal();
-	if(!OptionsDlgExport.bDoExport)
-	return 1;
 
 
 	meshList = new list<MMESH *>;
@@ -1021,11 +1017,6 @@ BOOL maxCMPExport::ExportRootMesh(IGameNode * pMesh,  const TCHAR *name)
 	
 	lstNames.push_back( pMesh->GetName());
 	
-	ExportOptions OptionsDlgExport(NULL);
-
-	OptionsDlgExport.DoModal();
-	if(!OptionsDlgExport.bDoExport)
-	return 1;
 
 	char VMeshRefFile[200];
 	strcpy(VMeshRefFile, pMesh->GetName());
@@ -1394,12 +1385,12 @@ int	maxCMPExport::DoExport(const TCHAR *name,ExpInterface *ei,Interface *i, BOOL
 	ReadConfig();
 
 	
-	//ExportOptions OptionsDlgExport(NULL);
+	static ExportOptions OptionsDlgExport(NULL);
 	
 
-	//OptionsDlgExport.DoModal();
-	//if(!OptionsDlgExport.bDoExport)
-	//return 1; // abort by user
+	OptionsDlgExport.DoModal();
+	if(!OptionsDlgExport.bDoExport)
+		return 1; // abort by user
 
 	gNode = new GroupA;	memset(gNode, 0, sizeof(GroupA));
 	IGameScene *nMeshes;

@@ -35,4 +35,5 @@ public:
 	afx_msg void OnBnClickedTangents();
 	afx_msg void OnBnClickedVcolor();
 
+	afx_msg void OnBnClickedRadio1();
 };
