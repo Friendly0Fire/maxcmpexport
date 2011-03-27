@@ -30,6 +30,7 @@ public:
 	BOOL bTangents;
 	BOOL bVColor;
 	BOOL bWireFrame;
+	BOOL bVuvm2;
 	EXPORT_CMPNT_OPTION eRadioCmpnts;
 	int iLOD;
 	afx_msg void OnBnClickedTangents();

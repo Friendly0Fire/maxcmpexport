@@ -113,11 +113,19 @@ struct gvmsVertEnh
 	Point3 gtangent;
 	Point3 gbinormal;
 };
+struct vmsVertUV
+{
+	Point3 vert;
+	Point3 normal;
+	Point2 uv;
+	Point2 uv2;
+};
 struct vmsVertEnh
 {
 	Point3 vert;
 	Point3 normal;
 	Point2 uv;
+	Point2 uv2;
 	Point3 tangent;
 	Point3 binormal;
 };
@@ -213,6 +221,7 @@ struct GroupA
 };
 struct ConsFix
 {
+	Point3 OriginXYZ;
 	uint cfParent;
 	uint cfChild;
 	float OriginX;
@@ -287,6 +296,7 @@ struct GMMESH
 struct MMESH
 {
 	vmsVertEnh * v;	// vmsVert array
+	vmsVertUV * vu;
 	vmsTri * t;		// vmsTri array
 	VMeshRefBounds * vmeshrefb;
 	VMeshRef * vmeshre;

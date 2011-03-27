@@ -405,16 +405,26 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 					IGameMaterial * subMat;
 					subMat = pMaterial->GetSubMaterial(i);
 				}
-				mesh->material = pMaterial->GetMaterialName();
-				MaterialNames.push_back(pMaterial->GetMaterialName());
+
 				IGameMesh *gMesh = (IGameMesh*)pMesh;			
 				mesh->pMesh = gMesh;
+			}
+			if(pMaterial==NULL)
+			{
+				MessageBox(0,"No material on one of the meshes, adding default name","Error exporting Material",MB_ICONERROR);
+				mesh->material =gNode->gname;
+			}
+			if (pMaterial!=NULL) 
+			{
+			mesh->material = pMaterial->GetMaterialName();
+			MaterialNames.push_back(pMaterial->GetMaterialName());
 			}
 			int nTris = gMesh->GetNumberOfFaces();
 			mesh->t = new vmsTri[nTris];
 			int nVerts = nTris*3;
 			mesh->v = new vmsVertEnh[nVerts];
 			mesh->vc = new vmsVertColor[nVerts];
+			mesh->vu = new vmsVertUV[nVerts];
 			
 			uint iVertexDuplicates = 0;
 
@@ -425,14 +435,16 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 				{
 					int nVert = (nTri*3 + i) - iVertexDuplicates;
 					
-					Point3 vertice, normal, binormal, tangent, color, BoundingBoxMaxx, BoundingBoxMinx, BoundingBoxMaxy, BoundingBoxMiny, BoundingBoxMaxz, BoundingBoxMinz;
-					Point2 uv, uvfl;
+					Point3 uv, vertice, normal, binormal, tangent, color, BoundingBoxMaxx, BoundingBoxMinx, BoundingBoxMaxy, BoundingBoxMiny, BoundingBoxMaxz, BoundingBoxMinz;
+					Point2  uvfl, uv2;
 					Box3 Bounds;
 					//float BoundingBoxMaxX = 1.0f;
-
+					
+					int iMapChannel = 1;
 
 					gMesh->GetVertex(pTriangle->vert[i], vertice);
-					gMesh->GetTexVertex(pTriangle->texCoord[i], uv);
+					//gMesh->GetTexVertex(pTriangle->texCoord[i], uv);
+					uv = gMesh->GetMapVertex(iMapChannel, gMesh->GetFaceTextureVertex(nTri, i, iMapChannel)); 
 					gMesh->GetNormal(pTriangle->norm[i], normal);
 
 
@@ -443,7 +455,8 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 					{
 						if(mesh->v[nVertB].vert == vertice &&
 								mesh->v[nVertB].normal == normal &&
-								mesh->v[nVertB].uv == uv)
+								mesh->v[nVertB].uv.x == uv.x &&
+								mesh->v[nVertB].uv.y == 1.0f - uv.y)
 						{
 							// match!
 							// assign triangle corner to found vertex index
@@ -460,7 +473,8 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 
 					mesh->v[nVert].vert = vertice;
 					mesh->v[nVert].normal = normal;
-					mesh->v[nVert].uv = uv;
+					mesh->v[nVert].uv.x = uv.x;
+					mesh->v[nVert].uv.y = 1.0f - uv.y;
 					
 					int iTBindex = gMesh->GetFaceVertexTangentBinormal(pTriangle->meshFaceIndex, i);
 					if(iTBindex != -1)
@@ -478,7 +492,47 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 						color = gMesh->GetColorVertex(pTriangle->color[i]);
 						mesh->vc[nVert].vert = vertice;
 						mesh->vc[nVert].diffuse = (DWORD)(alpha * 255)<<24 | (DWORD)(color.x * 255)<<16 | (DWORD)(color.y *255)<<8 | (DWORD)(color.z * 255);
-						mesh->vc[nVert].uv = uv;
+						mesh->vc[nVert].uv.x = uv.x;
+						mesh->vc[nVert].uv.y = 1.0f - uv.y;
+					}
+					int iVUindex = gMesh->GetFaceVertex(pTriangle->meshFaceIndex, i);		
+					if(iVUindex != -1)
+					{
+						mesh->vu[nVert].vert = vertice;
+						mesh->vu[nVert].normal = normal;
+						mesh->vu[nVert].uv.x = uv.x;
+						mesh->vu[nVert].uv.y = 1.0f - uv.y;
+
+						Tab<int> xTab = gMesh->GetActiveMapChannelNum();
+						int iNumMapChannels = xTab.Count();
+						if (iNumMapChannels)
+						{
+							for (int iMapChannel = 2; iMapChannel < iNumMapChannels + 2; iMapChannel++)
+							{
+								DWORD aiFaceIndex[3];
+								if (gMesh->GetMapFaceIndex(iMapChannel, nTri, (DWORD*)&aiFaceIndex))
+								{
+
+									DWORD aiFaceIndex[3];
+									if (gMesh->GetMapFaceIndex(iMapChannel, nTri, (DWORD*)&aiFaceIndex))
+									{
+										Point3 uv2;
+										gMesh->GetMapFaceIndex(iMapChannel, nTri, (DWORD*)&aiFaceIndex );
+										if (gMesh->GetMapVertex(iMapChannel, aiFaceIndex[i], uv2))
+										//if (gMesh->GetTexVertex(pTriangle->texCoord[i], uv2))
+										{
+												mesh->vu[nVert].uv2.x = uv2.x;
+												mesh->vu[nVert].uv2.y = 1.0f - uv.y;
+										}
+										else 
+										{
+										mesh->vu[nVert].uv2.x = 0;
+										mesh->vu[nVert].uv2.y = 0;
+										}
+									}
+								}
+							}
+						}
 					}
 					else
 					{
@@ -517,8 +571,6 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 	strcat (VMeshLibraryName, sLod.c_str());
 	int ngNodes= nMeshes->GetTopLevelNodeCount();
 	file3 = _tfopen ("___temp.verts", "wb");
-
-	ConsFix * cfix;
 
 	
 	for( int nNodes=0; nNodes<ngNodes; nNodes++)
@@ -957,6 +1009,8 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 	header.FVF = 0x412;
 	else if(OptionsDlgExport.bVColor)
 	header.FVF = 0x142;
+	else if(OptionsDlgExport.bVuvm2)
+	header.FVF = 0x212;
 	else
 	header.FVF = 0x112;
 	for (j = meshList->begin(); j != meshList->end(); j++)
@@ -993,6 +1047,8 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 		fwrite((*j)->v, sizeof(vmsVertEnh) * (*j)->nVerts, 1, file);
 		else if(OptionsDlgExport.bVColor)
 		fwrite((*j)->vc, sizeof(vmsVertColor) * (*j)->nVerts, 1, file);
+		else if(OptionsDlgExport.bVuvm2)
+		fwrite((*j)->vu, sizeof(vmsVertUV) * (*j)->nVerts, 1, file);
 		else
 		for(int p=0;p<(*j)->nVerts;p++)
 		fwrite((*j)->v + p, sizeof(vmsVert), 1, file);		
@@ -1072,8 +1128,27 @@ BOOL maxCMPExport::ExportRootMesh(IGameNode * pMesh,  const TCHAR *name)
 			IGameMaterial *pMaterial=NULL;
 			pMaterial=pMesh->GetNodeMaterial();
 			IGameTextureMap *pTexMap=NULL;
-			if (pMaterial!=NULL) pTexMap=pMaterial->GetIGameTextureMap(0);
-			mesh->material = pMaterial->GetMaterialName(); 
+			if(pMaterial==NULL)
+			{
+				IGameMesh *pMesh = (IGameMesh*)pModel;
+				int faces = pMesh->GetNumberOfFaces();
+				for(int i=0; i<faces; i++)
+				{
+					pMaterial=pMesh->GetMaterialFromFace(i);	
+					int SubMat = pMaterial->GetSubMaterialCount();
+					for(int i=0; i<SubMat;i++)
+					{
+						IGameMaterial * subMat;
+						subMat = pMaterial->GetSubMaterial(i);
+					}
+				}
+			}
+			else
+			if (pMaterial!=NULL) 
+			{
+				pTexMap=pMaterial->GetIGameTextureMap(0);
+				mesh->material = pMaterial->GetMaterialName(); 
+			}
 			MaterialNames.push_back(pMaterial->GetMaterialName());
 			mesh->nname = pMesh->GetName();
 
@@ -1088,6 +1163,7 @@ BOOL maxCMPExport::ExportRootMesh(IGameNode * pMesh,  const TCHAR *name)
 			int nVerts = nTris*3;
 			mesh->v = new vmsVertEnh[nVerts];
 			mesh->vc = new vmsVertColor[nVerts];
+			mesh->vu = new vmsVertUV[nVerts];
 			
 			uint iVertexDuplicates = 0;
 
@@ -1155,6 +1231,45 @@ BOOL maxCMPExport::ExportRootMesh(IGameNode * pMesh,  const TCHAR *name)
 					{
 						mesh->v[nVert].tangent = Point3(0,0,1);
 						mesh->v[nVert].binormal = Point3(1,0,0);
+					}
+					int iVUindex = pMesh->GetFaceVertex(pTriangle->meshFaceIndex, i);		
+					if(iVUindex != -1)
+					{
+						mesh->vu[nVert].vert = vertice;
+						mesh->vu[nVert].normal = normal;
+						mesh->vu[nVert].uv.x = uv.x;
+						mesh->vu[nVert].uv.y = 1.0f - uv.y;
+
+						Tab<int> xTab = pMesh->GetActiveMapChannelNum();
+						int iNumMapChannels = xTab.Count();
+						if (iNumMapChannels)
+						{
+							for (int iMapChannel = 2; iMapChannel < iNumMapChannels + 2; iMapChannel++)
+							{
+								DWORD aiFaceIndex[3];
+								if (pMesh->GetMapFaceIndex(iMapChannel, nTri, (DWORD*)&aiFaceIndex))
+								{
+
+									DWORD aiFaceIndex[3];
+									if (pMesh->GetMapFaceIndex(iMapChannel, nTri, (DWORD*)&aiFaceIndex))
+									{
+										Point3 uv2;
+										pMesh->GetMapFaceIndex(iMapChannel, nTri, (DWORD*)&aiFaceIndex );
+										if (pMesh->GetMapVertex(iMapChannel, aiFaceIndex[i], uv2))
+										//if (gMesh->GetTexVertex(pTriangle->texCoord[i], uv2))
+										{
+												mesh->vu[nVert].uv2.x = uv2.x;
+												mesh->vu[nVert].uv2.y = 1.0f - uv.y;
+										}
+										else 
+										{
+										mesh->vu[nVert].uv2.x = 0;
+										mesh->vu[nVert].uv2.y = 0;
+										}
+									}
+								}
+							}
+						}
 					}
 				}
 				mesh->nVerts = nVerts - iVertexDuplicates;
@@ -1250,6 +1365,8 @@ BOOL maxCMPExport::ExportRootMesh(IGameNode * pMesh,  const TCHAR *name)
 		header.FVF = 0x412;
 		else if(OptionsDlgExport.bVColor)
 		header.FVF = 0x142;
+		else if(OptionsDlgExport.bVuvm2)
+		header.FVF = 0x212;
 		else
 		header.FVF = 0x112;
 		for (j = meshList->begin(); j != meshList->end(); j++)
@@ -1314,6 +1431,8 @@ BOOL maxCMPExport::ExportRootMesh(IGameNode * pMesh,  const TCHAR *name)
 	header.FVF = 0x412;
 	else if(OptionsDlgExport.bVColor)
 	header.FVF = 0x142;
+	else if(OptionsDlgExport.bVuvm2)
+	header.FVF = 0x212;
 	else
 	header.FVF = 0x112;
 	for (j = meshList->begin(); j != meshList->end(); j++)
@@ -1347,6 +1466,8 @@ BOOL maxCMPExport::ExportRootMesh(IGameNode * pMesh,  const TCHAR *name)
 		fwrite((*j)->v, sizeof(vmsVertEnh) * (*j)->nVerts, 1, file);
 		else if(OptionsDlgExport.bVColor)
 		fwrite((*j)->vc, sizeof(vmsVertColor) * (*j)->nVerts, 1, file);
+		else if(OptionsDlgExport.bVuvm2)
+		fwrite((*j)->vu, sizeof(vmsVertUV) * (*j)->nVerts, 1, file);
 		else
 		for(int p=0;p<(*j)->nVerts;p++)
 		fwrite((*j)->v + p, sizeof(vmsVert), 1, file);		
