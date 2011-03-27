@@ -173,9 +173,23 @@ struct gvmsVertColor
  uint gdiffuse; // (4 bytes alpha-r-g-b or might be alpha-b-g-r)
  Point2 guv;
 };
+struct gvmsVertColorEnh
+{
+ Point3 gvert;
+ Point3 gnormal;
+ uint gdiffuse; // (4 bytes alpha-r-g-b or might be alpha-b-g-r)
+ Point2 guv;
+};
 struct vmsVertColor
 {
  Point3 vert;
+ uint diffuse; // (4 bytes alpha-r-g-b or might be alpha-b-g-r)
+ Point2 uv;
+};
+struct vmsVertColorEnh
+{
+ Point3 vert;
+ Point3 normal;
  uint diffuse; // (4 bytes alpha-r-g-b or might be alpha-b-g-r)
  Point2 uv;
 };
@@ -282,6 +296,7 @@ struct GMMESH
 	VMeshRefBounds * gvmeshrefb;
 	VMeshRef * vmeshre;
 	gvmsVertColor * gvc;
+	gvmsVertColorEnh * gvcn;
 	int gnVerts;
 	int gnTris;
 	uint gNum_Meshes;
@@ -301,6 +316,7 @@ struct MMESH
 	VMeshRefBounds * vmeshrefb;
 	VMeshRef * vmeshre;
 	vmsVertColor * vc;
+	vmsVertColorEnh * vcn;
 	int nVerts;
 	int nTris;
 	uint Num_Meshes;

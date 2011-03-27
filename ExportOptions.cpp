@@ -16,6 +16,7 @@ ExportOptions::ExportOptions(CWnd* pParent /*=NULL*/)
 	, bWireFrame(FALSE)
 	, bVColor(FALSE)
 	, bVuvm2(FALSE)
+	, bVColorEnh(FALSE)
 	, eRadioCmpnts(EXPORT_CMPNT_NONE)
 	, iLOD(0)
 {
@@ -33,6 +34,7 @@ void ExportOptions::DoDataExchange(CDataExchange* pDX)
 	DDX_Check(pDX, IDC_VCOLOR, bVColor);
 	DDX_Check(pDX, IDC_WIREFRAME, bWireFrame);
 	DDX_Check(pDX, IDC_VUVM2, bVuvm2);
+	DDX_Check(pDX, IDC_VCOLORENH, bVColorEnh);
 	DDX_Radio(pDX, IDC_CMPNT_NONE, (int&)eRadioCmpnts);
 	DDX_CBIndex(pDX, IDC_COMBO1, iLOD);
 	DDV_MinMaxInt(pDX, iLOD, 0, 5);

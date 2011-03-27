@@ -425,6 +425,7 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 			mesh->v = new vmsVertEnh[nVerts];
 			mesh->vc = new vmsVertColor[nVerts];
 			mesh->vu = new vmsVertUV[nVerts];
+			mesh->vcn = new vmsVertColorEnh[nVerts];
 			
 			uint iVertexDuplicates = 0;
 
@@ -494,6 +495,17 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 						mesh->vc[nVert].diffuse = (DWORD)(alpha * 255)<<24 | (DWORD)(color.x * 255)<<16 | (DWORD)(color.y *255)<<8 | (DWORD)(color.z * 255);
 						mesh->vc[nVert].uv.x = uv.x;
 						mesh->vc[nVert].uv.y = 1.0f - uv.y;
+					}
+					int iVCNindex = gMesh->GetFaceVertex(pTriangle->meshFaceIndex, i);		
+					if(iVCNindex != -1)
+					{
+						alpha = gMesh->GetAlphaVertex(pTriangle->alpha[i]);
+						color = gMesh->GetColorVertex(pTriangle->color[i]);
+						mesh->vcn[nVert].vert = vertice;
+						mesh->vcn[nVert].normal = normal;
+						mesh->vcn[nVert].diffuse = (DWORD)(alpha * 255)<<24 | (DWORD)(color.x * 255)<<16 | (DWORD)(color.y *255)<<8 | (DWORD)(color.z * 255);
+						mesh->vcn[nVert].uv.x = uv.x;
+						mesh->vcn[nVert].uv.y = 1.0f - uv.y;
 					}
 					int iVUindex = gMesh->GetFaceVertex(pTriangle->meshFaceIndex, i);		
 					if(iVUindex != -1)
@@ -1011,6 +1023,8 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 	header.FVF = 0x142;
 	else if(OptionsDlgExport.bVuvm2)
 	header.FVF = 0x212;
+	else if(OptionsDlgExport.bVColorEnh)
+	header.FVF = 0x152;
 	else
 	header.FVF = 0x112;
 	for (j = meshList->begin(); j != meshList->end(); j++)
@@ -1049,6 +1063,8 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 		fwrite((*j)->vc, sizeof(vmsVertColor) * (*j)->nVerts, 1, file);
 		else if(OptionsDlgExport.bVuvm2)
 		fwrite((*j)->vu, sizeof(vmsVertUV) * (*j)->nVerts, 1, file);
+		else if(OptionsDlgExport.bVColorEnh)
+		fwrite((*j)->vcn, sizeof(vmsVertColorEnh) * (*j)->nVerts, 1, file);
 		else
 		for(int p=0;p<(*j)->nVerts;p++)
 		fwrite((*j)->v + p, sizeof(vmsVert), 1, file);		
@@ -1164,6 +1180,7 @@ BOOL maxCMPExport::ExportRootMesh(IGameNode * pMesh,  const TCHAR *name)
 			mesh->v = new vmsVertEnh[nVerts];
 			mesh->vc = new vmsVertColor[nVerts];
 			mesh->vu = new vmsVertUV[nVerts];
+			mesh->vcn = new vmsVertColorEnh[nVerts];
 			
 			uint iVertexDuplicates = 0;
 
@@ -1227,18 +1244,22 @@ BOOL maxCMPExport::ExportRootMesh(IGameNode * pMesh,  const TCHAR *name)
 						mesh->vc[nVert].diffuse = (DWORD)(alpha * 255)<<24 | (DWORD)(color.x * 255)<<16 | (DWORD)(color.y *255)<<8 | (DWORD)(color.z * 255);
 						mesh->vc[nVert].uv = uv;
 					}
-					else
+					int iVCNindex = pMesh->GetFaceVertex(pTriangle->meshFaceIndex, i);		
+					if(iVCNindex != -1)
 					{
-						mesh->v[nVert].tangent = Point3(0,0,1);
-						mesh->v[nVert].binormal = Point3(1,0,0);
+						alpha = pMesh->GetAlphaVertex(pTriangle->alpha[i]);
+						color = pMesh->GetColorVertex(pTriangle->color[i]);
+						mesh->vcn[nVert].vert = vertice;
+						mesh->vcn[nVert].normal = normal;
+						mesh->vcn[nVert].diffuse = (DWORD)(alpha * 255)<<24 | (DWORD)(color.x * 255)<<16 | (DWORD)(color.y *255)<<8 | (DWORD)(color.z * 255);
+						mesh->vcn[nVert].uv = uv;
 					}
 					int iVUindex = pMesh->GetFaceVertex(pTriangle->meshFaceIndex, i);		
 					if(iVUindex != -1)
 					{
 						mesh->vu[nVert].vert = vertice;
 						mesh->vu[nVert].normal = normal;
-						mesh->vu[nVert].uv.x = uv.x;
-						mesh->vu[nVert].uv.y = 1.0f - uv.y;
+						mesh->vu[nVert].uv = uv;
 
 						Tab<int> xTab = pMesh->GetActiveMapChannelNum();
 						int iNumMapChannels = xTab.Count();
@@ -1270,6 +1291,11 @@ BOOL maxCMPExport::ExportRootMesh(IGameNode * pMesh,  const TCHAR *name)
 								}
 							}
 						}
+					}
+					else
+					{
+						mesh->v[nVert].tangent = Point3(0,0,1);
+						mesh->v[nVert].binormal = Point3(1,0,0);
 					}
 				}
 				mesh->nVerts = nVerts - iVertexDuplicates;
@@ -1367,6 +1393,8 @@ BOOL maxCMPExport::ExportRootMesh(IGameNode * pMesh,  const TCHAR *name)
 		header.FVF = 0x142;
 		else if(OptionsDlgExport.bVuvm2)
 		header.FVF = 0x212;
+		else if(OptionsDlgExport.bVColorEnh)
+		header.FVF = 0x152;
 		else
 		header.FVF = 0x112;
 		for (j = meshList->begin(); j != meshList->end(); j++)
@@ -1433,6 +1461,8 @@ BOOL maxCMPExport::ExportRootMesh(IGameNode * pMesh,  const TCHAR *name)
 	header.FVF = 0x142;
 	else if(OptionsDlgExport.bVuvm2)
 	header.FVF = 0x212;
+	else if(OptionsDlgExport.bVColorEnh)
+	header.FVF = 0x152;
 	else
 	header.FVF = 0x112;
 	for (j = meshList->begin(); j != meshList->end(); j++)
@@ -1468,6 +1498,8 @@ BOOL maxCMPExport::ExportRootMesh(IGameNode * pMesh,  const TCHAR *name)
 		fwrite((*j)->vc, sizeof(vmsVertColor) * (*j)->nVerts, 1, file);
 		else if(OptionsDlgExport.bVuvm2)
 		fwrite((*j)->vu, sizeof(vmsVertUV) * (*j)->nVerts, 1, file);
+		else if(OptionsDlgExport.bVColorEnh)
+		fwrite((*j)->vcn, sizeof(vmsVertColorEnh) * (*j)->nVerts, 1, file);
 		else
 		for(int p=0;p<(*j)->nVerts;p++)
 		fwrite((*j)->v + p, sizeof(vmsVert), 1, file);		
