@@ -1560,7 +1560,19 @@ int	maxCMPExport::DoExport(const TCHAR *name,ExpInterface *ei,Interface *i, BOOL
 	nMeshes = GetIGameInterface();
 
 	IGameConversionManager * cm = GetConversionManager();
-	cm->SetCoordSystem(IGameConversionManager::IGAME_D3D);
+	cm->SetCoordSystem(IGameConversionManager::IGAME_USER);
+
+	UserCoord myCoordSystem = {
+	1,	//Right Handed
+	0,	//X axis goes Left
+	2,	//Y Axis goes up
+	4,	//Z Axis goes in.
+	1,	//U Tex axis is right
+	1,  //V Tex axis is Down
+	};
+
+	cm->SetUserCoordSystem( myCoordSystem );
+
 	nMeshes->InitialiseIGame(false); // true- we want selected only - false we want all!
 
 	nMeshes->SetStaticFrame(0);
