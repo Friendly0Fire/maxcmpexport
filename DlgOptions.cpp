@@ -490,7 +490,6 @@ END_MESSAGE_MAP()
 //======================================================================
 
 IGameNode *pMesh;
-sNodeInfo * snode;
 //ExportOptions OptionsDlgExport;
 
 BOOL cDlgOptions::OnInitDialog() 

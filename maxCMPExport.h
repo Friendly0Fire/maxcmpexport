@@ -125,7 +125,6 @@ struct vmsVertEnh
 	Point3 vert;
 	Point3 normal;
 	Point2 uv;
-	Point2 uv2;
 	Point3 tangent;
 	Point3 binormal;
 };
@@ -218,7 +217,6 @@ struct vmsMesh
 
 struct GLIST
 {
-
 	TCHAR * glname ;
 	int NodeCount;
 	IGameNode *GroupMesh;

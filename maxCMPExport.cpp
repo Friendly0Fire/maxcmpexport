@@ -145,8 +145,6 @@ public:
 	void ExportNodeInfo(IGameNode * pMesh, const TCHAR *name);
 	BOOL ExportGroup(IGameNode * pMesh, const TCHAR* name);
 	BOOL ExportRootMesh(IGameNode * pMesh, const TCHAR *name);
-	BOOL	nodeEnum(INode* node);
-	void	PreProcess(INode* node, int& nodeCount);
 	BOOL SupportsOptions(int ext, DWORD options);
 	int				DoExport(const TCHAR *name,ExpInterface *ei,Interface *i, BOOL suppressPrompts=FALSE, DWORD options=0);
 	int staticFrame;
@@ -333,7 +331,6 @@ void normalize (VECTOR * dest, VECTOR * src)
 
 IGameMaterial *pMaterial;
 GroupA* gNode;
-sNodeInfo nodeinfo;
 GLIST *glist;
 BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 {	
@@ -566,6 +563,20 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 	list<GLIST *>::iterator GL;
 	list<MMESH *>::iterator i = meshList->begin();
 
+	while (i != meshList->end())
+	{    
+		bool isActive = (*i)->nTris > 0;    
+		if (!isActive)    
+		{        
+			meshList->erase(i++);  // alternatively, i = items.erase(i);    
+		}    
+		else    
+		{        
+			      
+			++i;    
+		}
+	}
+
 	GMMESH * gmesh;
 	MMESH * mmesh = *i;
 
@@ -714,6 +725,7 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 
 							int nMesh=0;
 							memset(&vmeshrefb, 0,sizeof(vmeshrefb));
+
 							for (G = groupList->begin(); G != groupList->end(); G++)
 							{
 								GMMESH * gm = *G;
@@ -848,6 +860,7 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 
 						int nMesh=0;
 						memset(&vmeshrefb, 0,sizeof(vmeshrefb));
+
 						for (G = groupList->begin(); G != groupList->end(); G++)
 						{
 							GMMESH * gm = *G;
@@ -892,6 +905,21 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 
 			//Create a VMeshRef for each part and store start/end vert for each
 			//part aswell in an array to update original .vms file
+			list<GMMESH *>::iterator g = groupList->begin();
+			while (g != groupList->end())
+			{    
+				bool isActive = (*g)->gnTris > 0;    
+				if (!isActive)    
+				{        
+					groupList->erase(g++);  // alternatively, i = items.erase(i); 
+					vmeshref.NumMeshes = vmeshref.NumMeshes-1;
+				}    
+				else    
+				{        
+					      
+					++g;    
+				}
+			}
 			vmsMesh vmesh;	memset(&vmesh, 0, sizeof(vmesh));
 			int hStartVert = 0;
 			for (G = groupList->begin(); G != groupList->end(); G++)
@@ -1027,6 +1055,8 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 	header.FVF = 0x152;
 	else
 	header.FVF = 0x112;
+
+
 	for (j = meshList->begin(); j != meshList->end(); j++)
 	{
 		header.nRefVertices += (*j)->nTris * 3;
@@ -1637,52 +1667,6 @@ int	maxCMPExport::DoExport(const TCHAR *name,ExpInterface *ei,Interface *i, BOOL
 	return 1;
 }
 
-BOOL maxCMPExport::nodeEnum(INode* node) 
-{	if(exportSelected && node->Selected() == FALSE)
-	return TREE_CONTINUE;
-
-	nCurNode++;
-
-	if (ip->GetCancel())
-	return FALSE;
-
-	if (node->IsGroupHead())
-	{
-	}
-	if(!exportSelected || node->Selected()) 
-	{
-		ObjectState os = node->EvalWorldState(0); 
-		if (os.obj) 
-		{
-			// We look at the super class ID to determine the type of the object.
-			switch(os.obj->SuperClassID()) {
-			case GEOMOBJECT_CLASS_ID: 
-				if (os.obj->SuperClassID()==GEOMOBJECT_CLASS_ID); 
-				break;
-			}
-		}
-	}
-	for (int c = 0; c < node->NumberOfChildren(); c++) {
-		if (!nodeEnum(node->GetChildNode(c)))
-		return FALSE;
-	}
-	if (node->IsGroupHead()) {
-	}
-	return TRUE;
-}
-void maxCMPExport::PreProcess(INode* node, int& nodeCount)
-{	nodeCount++;
-	// Add the nodes material to out material list
-	// Null entries are ignored when added...
-	//mtlList.AddMtl(node->GetMtl());
-
-	// For each child of this node, we recurse into ourselves 
-	// and increment the counter until no more children are found.
-	for (int c = 0; c < node->NumberOfChildren(); c++) {
-		PreProcess(node->GetChildNode(c), nodeCount);
-	}
-
-}
 BOOL maxCMPExport::SupportsOptions(int ext, DWORD options) {
 	assert(ext == 0);	// We only support one extension
 	return(options == SCENE_EXPORT_SELECTED) ? TRUE : FALSE;
@@ -1696,7 +1680,6 @@ TSTR maxCMPExport::GetCfgFilename()
 	return filename;
 }// NOTE: Update anytime the CFG file changes
 #define CFG_VERSION 0x03
-
 BOOL maxCMPExport::ReadConfig()
 {	TSTR filename = GetCfgFilename();
 	FILE* cfgStream;
