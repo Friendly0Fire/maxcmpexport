@@ -17,6 +17,10 @@
 
 #include "stdafx.h"
 
+#include <string>
+#include <list>
+using namespace std;
+
 
 #if _MSC_VER > 1000
 
@@ -43,6 +47,7 @@
 #include "igame.h"
 #include "igameobject.h"
 //SIMPLE TYPE
+
 
 #define CFGFILENAME		_T("maxCMPExport.CFG")
 
@@ -135,10 +140,10 @@ struct mSplineKnot
 {
 	unsigned short SVertice[3];
 };
-struct VMeshRefBounds
+struct VMeshRef
 {
 	uint Header_Size; // 0x0000003C
-	uint VMesh_LibId; // crc of 3db name
+	uint VMesh_LibId; // crc of vmeshdata name
 	unsigned short Start_Vert;
 	unsigned short Num_Vert;
 	unsigned short Start_Index;
@@ -154,7 +159,6 @@ struct VMeshRefBounds
 	float Center_X;
     float Center_Y;
 	float Center_Z;
- 	//Point3 v_Center;
 	float _Radius;
 
 };
@@ -188,9 +192,9 @@ struct vmsHeader
 struct vmsMesh
 {
 	unsigned int material;	// material ID is a CRC32 (with mod table) of the material name
-	short start_vert_number;
-	short end_vert_number;
-	short number_of_vert_references; // faces * 3;
+	unsigned short start_vert_number;
+	unsigned short end_vert_number;
+	unsigned short number_of_vert_references; // faces * 3;
 	short padding;	// = 0xcc, for dword allignment, apparently
 };
 
@@ -222,29 +226,7 @@ struct ConsFix
 	Point3 RotationY;
 	Point3 RotationZ;
 };
-struct VMeshRef
-{
-	// Header - one per lod for each .3db section of cmp - 60 bytes
-	uint HeaderSize; // 0x0000003C
-	uint VMeshLibId; // crc of 3db name
-	int StartVert;
-	unsigned short NumVert;
-	unsigned short StartIndex;
-	unsigned short NumIndex;
-	uint StartMesh;
-	uint NumMeshes;
-	float BoundingBoxMaxX;
-	float BoundingBoxMinX;
-	float BoundingBoxMaxY;
-	float BoundingBoxMinY;
-	float BoundingBoxMaxZ;
-	float BoundingBoxMinZ;
-    //float CenterX;
-    //float CenterY;
-	//float CenterZ;
- 	Point3 vCenter;
-	Point3 Radius;
-};
+
 struct sNodeInfo
 {
 	TCHAR *NodeName;
@@ -270,7 +252,6 @@ struct GMMESH
 {
 	gvmsVertEnh * gv;	// vmsVert array
 	gvmsTri * gt;		// vmsTri array
-	VMeshRefBounds * gvmeshrefb;
 	VMeshRef * vmeshre;
 	gvmsVertColor * gvc;
 	int gnVerts;
@@ -288,7 +269,6 @@ struct MMESH
 {
 	vmsVertEnh * v;	// vmsVert array
 	vmsTri * t;		// vmsTri array
-	VMeshRefBounds * vmeshrefb;
 	VMeshRef * vmeshre;
 	vmsVertColor * vc;
 	int nVerts;
@@ -301,6 +281,45 @@ struct MMESH
 	VECTOR * tri_normals;
 
 	IGameMesh *pMesh; // 3ds max mesh object
+};
+
+struct SMESH
+{
+	vmsVertEnh * v;	// vmsVert array
+	vmsTri * t;		// vmsTri array
+	vmsVertColor * vc;
+	int nVerts;
+	int nTris;
+	
+	string sMaterial;	// material name
+	string sName;	// mesh name
+
+	IGameMesh *pMesh; // 3ds max mesh object
+};
+
+struct THREEDB_DATA
+{
+	string sFileName; 
+	VMeshRef vmeshref;
+	list<SMESH*> meshes;
+};
+
+struct VMESHDATA_FILE
+{
+	string sFilename;
+	FILE* file;
+	uint nRefVertices;
+	uint nVertices;
+	uint nMeshes;
+};
+
+struct CMPND_DATA
+{
+	string sName;
+	string sObjectName;
+	THREEDB_DATA* object_data;
+	VMESHDATA_FILE* vmeshdata_file;
+	int index;
 };
 
 
