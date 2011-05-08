@@ -338,6 +338,10 @@ void maxMATExporter::Test (Interface *ip)
 		}
 	}
 }
+bool DataSortPredicate(const MMESH* lhs, const MMESH* rhs)
+{
+  return lhs->material < rhs->material;
+}
 BOOL maxMATExporter::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 {
 
@@ -406,6 +410,7 @@ BOOL maxMATExporter::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 				int texCount = pMaterial->GetNumberOfTextureMaps();
 				for(int i=0;i<texCount;i++)
 				{     
+					IsSelfIllum = false;
 					IGameTextureMap * tex = pMaterial->GetIGameTextureMap(i);   
 					TCHAR * name = tex->GetTextureName();    
 					if(tex->IsEntitySupported()) //its a bitmap texture    
@@ -486,6 +491,31 @@ BOOL maxMATExporter::ExportGroup(IGameNode * pMesh, const TCHAR* name)
 			}
 		}
 	}
+/*	for (std::list<MMESH*>::iterator i = meshList->begin();i != meshList->end(); ++i)
+	{
+		meshList->sort(DataSortPredicate);
+		
+	}
+
+	list<MMESH *>::iterator i = meshList->begin();
+
+	while (i != meshList->end())
+	{   
+		if(mesh->IsOpac == false)
+		{
+			bool isActive = (*i)->pFilePath != NULL;    
+			if (!isActive)    
+			{        
+				meshList->erase(i++);  // alternatively, i = items.erase(i);    
+			}    
+			else    
+			{        
+				      
+				++i;    
+			}
+		}
+	}*/
+
 	nMeshes->ReleaseIGame();
 
 	mesh = new MMESH;	memset(mesh, 0, sizeof(MMESH));
@@ -564,7 +594,8 @@ BOOL maxMATExporter::ExportRootMesh(IGameNode * pMesh,  const TCHAR *name)
 
 			int texCount = pMaterial->GetNumberOfTextureMaps();
 			for(int i=0;i<texCount;i++)
-			{     
+			{    
+				IsSelfIllum = false;
 				IGameTextureMap * tex = pMaterial->GetIGameTextureMap(i);   
 				TCHAR * name = tex->GetTextureName();    
 				if(tex->IsEntitySupported()) //its a bitmap texture    
