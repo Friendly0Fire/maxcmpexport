@@ -143,8 +143,8 @@ public:
 	void			ShowOptions(HWND hWnd);
 
 
-	BOOL ExportGroup(IGameNode * pMesh, string);
-	void CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMPData);
+	bool ExportGroup(IGameNode * pMesh, string);
+	bool CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMPData);
 	BOOL	nodeEnum(INode* node);
 	void	PreProcess(INode* node, int& nodeCount);
 	BOOL SupportsOptions(int ext, DWORD options);
@@ -156,6 +156,8 @@ public:
 	int			nCurNode;
 	Tab<IGameNode*>Meshes;
 	Tab<IGameNode*>gMeshes;
+
+	ExportOptions* OptionsDlgExport;
 
 	maxCMPExport();
 	~maxCMPExport();
@@ -254,8 +256,6 @@ CMaxPlugInApp::CMaxPlugInApp()
 {
 }
 
-static ExportOptions OptionsDlgExport;
-
 //--- maxCMPExport -------------------------------------------------------
 #include <list>
 using namespace std;
@@ -333,8 +333,11 @@ void normalize (VECTOR * dest, VECTOR * src)
 	dest->vec = src->vec / len;
 }
 
+FILE* fixnode;
+FILE* revnode;
+FILE* prisnode;
 
-void maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMPData)
+bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMPData)
 {
 
 	CMPND_DATA* cmpnd = new CMPND_DATA;
@@ -448,11 +451,12 @@ void maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 						mesh->v[nVert].binormal = Point3(0,0,0);
 					}
 				}
-				mesh->nVerts = nVerts - iVertexDuplicates;
-				iNumVerts += mesh->nVerts;
-				mesh->nTris = nTris;
-				iNumFaces += mesh->nTris;
 			}
+
+			mesh->nVerts = nVerts - iVertexDuplicates;
+			iNumVerts += mesh->nVerts;
+			mesh->nTris = nTris;
+			iNumFaces += mesh->nTris;
 
 			// insert into mesh list
 			cmpnd->object_data->meshes.push_back(mesh);
@@ -479,12 +483,39 @@ void maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 	cmpnd->object_data->vmeshref.Header_Size = 60;
 	cmpnd->object_data->vmeshref.Num_Meshes = (unsigned short)cmpnd->object_data->meshes.size();
 	cmpnd->object_data->vmeshref.Num_Vert = iNumVerts;
+
+	// exit if referenced vertices is over unsigned short limit, because of vmeshdata header limitation
+	if(iNumFaces*3 > 0xFFFF)
+	{
+		string sError = "The group \"";
+		sError += cmpnd->sObjectName;
+		sError += "\" references more vertices than Freelancer can handle. Split the group into smaller groups!";
+		MessageBox(0,sError.c_str(),"Error exporting a group object",MB_ICONERROR);
+		return false;
+	}
+
 	cmpnd->object_data->vmeshref.Num_Index = iNumFaces*3;
 	cmpnd->object_data->vmeshref.Num_Meshes = (unsigned short)cmpnd->object_data->meshes.size();
 
 	cmpnd->index = (int)lstCMPData->size();
 
 	lstCMPData->push_back(cmpnd);
+
+	if(cmpnd->sObjectName != "Root")
+	{
+		PartFix fixdata;  memset(&fixdata, 0, sizeof(PartFix));
+		strcpy(fixdata.ParentName, "Root");
+		strcpy(fixdata.ChildName, cmpnd->sObjectName.c_str());
+
+		// identity matrix
+		fixdata.RotMatXX = 1;
+		fixdata.RotMatYY = 1;
+		fixdata.RotMatZZ = 1;
+
+		fwrite(&fixdata, sizeof(fixdata), 1, fixnode);
+	}
+
+	return true;
 }
 
 
@@ -492,7 +523,7 @@ IGameMaterial *pMaterial;
 GroupA* gNode;
 sNodeInfo nodeinfo;
 
-BOOL maxCMPExport::ExportGroup(IGameNode * pRootGrp, string sExportFilename)
+bool maxCMPExport::ExportGroup(IGameNode * pRootGrp, string sExportFilename)
 {	
 	
 	IGameScene *nMeshes;
@@ -501,53 +532,57 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pRootGrp, string sExportFilename)
 
 	list<CMPND_DATA*>* lstCMPData = new list<CMPND_DATA*>;
 
+	fixnode = fopen("fixnode.bin", "wb");
+	revnode = fopen("revnode.bin", "wb");
+	prisnode = fopen("prisnode.bin", "wb");
+
 	// create data for root grp
-	CreateCMPData(pRootGrp, lstCMPData);
+	if(!CreateCMPData(pRootGrp, lstCMPData))
+		return false;
 
 	// create data for all components
 	for(int nNode = 0; nNode < nMeshes->GetTopLevelNodeCount(); nNode++)
 	{	
 		IGameNode* pNode = nMeshes->GetTopLevelNode(nNode);
 		if(pNode != pRootGrp && pNode->IsGroupOwner())
-			CreateCMPData(pNode, lstCMPData);
+			if(!CreateCMPData(pNode, lstCMPData))
+				return false;
 	}
+
+	fclose(fixnode);
+	fclose(revnode);
+	fclose(prisnode);
 
 	// create vmeshdata files
 	list<VMESHDATA_FILE*>* lstVMeshData = new list<VMESHDATA_FILE*>;
 
-	VMESHDATA_FILE* cur_meshdata_file = new VMESHDATA_FILE;
-	lstVMeshData->push_back(cur_meshdata_file);
+	VMESHDATA_FILE* cur_meshdata_file = NULL;
 
-	cur_meshdata_file->sFilename = sExportFilename.substr(0, sExportFilename.length()-3);
-	cur_meshdata_file->sFilename += "0.lod";
-	cur_meshdata_file->sFilename += (char)(48+ OptionsDlgExport.iLOD);
-	cur_meshdata_file->sFilename += ".vms";
-	cur_meshdata_file->nVertices = 0;
-	cur_meshdata_file->nRefVertices = 0;
-	cur_meshdata_file->nMeshes = 0;
-	cur_meshdata_file->file = fopen(cur_meshdata_file->sFilename.c_str(), "wb");
+	string sFilenameSubstr = sExportFilename.substr(sExportFilename.rfind("\\")+1, (sExportFilename.length()-3) - (sExportFilename.rfind("\\")+1));
 
 	for(list<CMPND_DATA*>::iterator it = lstCMPData->begin(); it != lstCMPData->end(); it++)
 	{
-		if( ((*it)->object_data->vmeshref.Num_Index + cur_meshdata_file->nRefVertices) > sizeof(unsigned short)) // unsigned short limitation
+		if(!cur_meshdata_file || ((*it)->object_data->vmeshref.Num_Index + cur_meshdata_file->nRefVertices) > 0xFFFF) // unsigned short limitation
 		{
 			cur_meshdata_file = new VMESHDATA_FILE;
-			cur_meshdata_file->sFilename = sExportFilename.substr(0, sExportFilename.length()-3);
-			cur_meshdata_file->sFilename += (char)(48+ (int)lstCMPData->size());
+			cur_meshdata_file->sFilename = sFilenameSubstr;
+			cur_meshdata_file->sFilename += (char)(48+ (int)lstVMeshData->size());
 			cur_meshdata_file->sFilename += ".lod";
-			cur_meshdata_file->sFilename += (char)(48+ OptionsDlgExport.iLOD);
+			cur_meshdata_file->sFilename += (char)(48+ OptionsDlgExport->iLOD);
 			cur_meshdata_file->sFilename += ".vms";
 			cur_meshdata_file->nVertices = 0;
+			cur_meshdata_file->nRefVertices = 0;
+			cur_meshdata_file->nMeshes = 0;
 			cur_meshdata_file->file = fopen(cur_meshdata_file->sFilename.c_str(), "wb");
 			lstVMeshData->push_back(cur_meshdata_file);
 		}
 
 		cur_meshdata_file->nRefVertices += (*it)->object_data->vmeshref.Num_Index;
 		cur_meshdata_file->nVertices += (*it)->object_data->vmeshref.Num_Vert;
-		cur_meshdata_file->nMeshes++;
+		cur_meshdata_file->nMeshes += (uint)(*it)->object_data->meshes.size();
 
 		// update cmp data
-		(*it)->object_data->sFileName = sExportFilename.substr(0, sExportFilename.length()-3);
+		(*it)->object_data->sFileName = sFilenameSubstr;
 		(*it)->object_data->sFileName += (*it)->sObjectName;
 		(*it)->object_data->sFileName += ".3db";
 		(*it)->object_data->vmeshref.VMesh_LibId = fl_crc32((char*)cur_meshdata_file->sFilename.c_str());
@@ -564,9 +599,9 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pRootGrp, string sExportFilename)
 
 		header.nMeshes = (*it)->nMeshes;
 
-		if(OptionsDlgExport.bTangents)
+		if(OptionsDlgExport->bTangents)
 			header.FVF = 0x412;
-		else if(OptionsDlgExport.bVColor)
+		else if(OptionsDlgExport->bVColor)
 			header.FVF = 0x142;
 		else
 			header.FVF = 0x112;
@@ -576,11 +611,83 @@ BOOL maxCMPExport::ExportGroup(IGameNode * pRootGrp, string sExportFilename)
 
 		fwrite (&header, sizeof(header), 1, (*it)->file);
 
+		uint iMesh = 0;
+		uint iGlobalStartVertex = 0;
+		uint iGlobalStartIndex = 0;
+
+		// save mesh header data
 		for(list<CMPND_DATA*>::iterator itcmpnd = lstCMPData->begin(); itcmpnd != lstCMPData->end(); itcmpnd++)
 		{
+			if( (*itcmpnd)->vmeshdata_file == (*it))
+			{
+				(*itcmpnd)->object_data->vmeshref.Start_Mesh = iMesh;
+				(*itcmpnd)->object_data->vmeshref.Start_Vert = iGlobalStartVertex;
+				(*itcmpnd)->object_data->vmeshref.Start_Index = iGlobalStartIndex;
 
+				uint iStartVert = 0; // this is per cmpnd
+
+				for(list<SMESH*>::iterator itmesh = (*itcmpnd)->object_data->meshes.begin(); itmesh != (*itcmpnd)->object_data->meshes.end(); itmesh++)
+				{
+					vmsMesh vmesh;
+					vmesh.material = fl_crc32((char*)(*itmesh)->sMaterial.c_str());
+					vmesh.start_vert_number = iStartVert;
+					vmesh.end_vert_number = iStartVert + (*itmesh)->nVerts;
+					vmesh.number_of_vert_references = (*itmesh)->nTris*3;
+					vmesh.padding = 0xcc;
+					
+					fwrite(&vmesh, sizeof(vmesh), 1, (*it)->file);
+
+					iStartVert += (*itmesh)->nVerts;
+					iGlobalStartIndex += vmesh.number_of_vert_references;
+					iGlobalStartVertex += (*itmesh)->nVerts;
+					iMesh++;
+				}
+			}
 		}
+
+		// save indices
+		for(list<CMPND_DATA*>::iterator itcmpnd = lstCMPData->begin(); itcmpnd != lstCMPData->end(); itcmpnd++)
+		{
+			if( (*itcmpnd)->vmeshdata_file == (*it))
+			{
+				for(list<SMESH*>::iterator itmesh = (*itcmpnd)->object_data->meshes.begin(); itmesh != (*itcmpnd)->object_data->meshes.end(); itmesh++)
+				{
+					// write triangles
+					fwrite((*itmesh)->t, sizeof(vmsTri) * (*itmesh)->nTris, 1, (*it)->file);				
+				}
+			}
+		}
+
+		// save vertices
+		for(list<CMPND_DATA*>::iterator itcmpnd = lstCMPData->begin(); itcmpnd != lstCMPData->end(); itcmpnd++)
+		{
+			if( (*itcmpnd)->vmeshdata_file == (*it))
+			{
+				for(list<SMESH*>::iterator itmesh = (*itcmpnd)->object_data->meshes.begin(); itmesh != (*itcmpnd)->object_data->meshes.end(); itmesh++)
+				{
+					// write vertices
+					if(OptionsDlgExport->bTangents)
+						fwrite((*itmesh)->v, sizeof(vmsVertEnh) * (*itmesh)->nVerts, 1, (*it)->file);
+					else if(OptionsDlgExport->bVColor)
+						fwrite((*itmesh)->vc, sizeof(vmsVertColor) * (*itmesh)->nVerts, 1, (*it)->file);
+					else
+						for(int p=0;p<(*itmesh)->nVerts;p++)
+							fwrite((*itmesh)->v + p, sizeof(vmsVert), 1, (*it)->file);		
+				}
+			}
+		}
+
+		
+		// finished this vmeshdata file
+		fclose((*it)->file);
 	}
+
+	cDlgOptions dlgOptions (NULL);
+	dlgOptions.SetOptions(OptionsDlgExport);
+	dlgOptions.SetCMPNDData(lstCMPData);
+	dlgOptions.SetVMeshData(lstVMeshData);
+	dlgOptions.SetFileName((char*)sExportFilename.c_str());
+	dlgOptions.DoModal();
 		
 	/*
 	for(int nNode = 0; nNode < pRootGrp->GetChildCount(); nNode++)
@@ -1245,11 +1352,11 @@ int	maxCMPExport::DoExport(const TCHAR *export_filename,ExpInterface *ei,Interfa
 	ReadConfig();
 
 	
-	static ExportOptions OptionsDlgExport(NULL);
+	OptionsDlgExport = new ExportOptions(NULL);
 	
 
-	OptionsDlgExport.DoModal();
-	if(!OptionsDlgExport.bDoExport)
+	OptionsDlgExport->DoModal();
+	if(!OptionsDlgExport->bDoExport)
 		return 1; // abort by user
 
 	gNode = new GroupA;	memset(gNode, 0, sizeof(GroupA));
@@ -1258,7 +1365,17 @@ int	maxCMPExport::DoExport(const TCHAR *export_filename,ExpInterface *ei,Interfa
 	nMeshes = GetIGameInterface();
 
 	IGameConversionManager * cm = GetConversionManager();
-	cm->SetCoordSystem(IGameConversionManager::IGAME_D3D);
+	cm->SetCoordSystem(IGameConversionManager::IGAME_USER);
+	UserCoord myCoordSystem = {
+		1,	//Right Handed
+		0,	//X axis goes Left
+		2,	//Y Axis goes up
+		4,	//Z Axis goes in.	
+		1,	//U Tex axis is right	
+		1,  //V Tex axis is Down	
+	};
+	cm->SetUserCoordSystem( myCoordSystem );
+
 	nMeshes->InitialiseIGame(false); // true- we want selected only - false we want all!
 
 	nMeshes->SetStaticFrame(0);
@@ -1285,9 +1402,15 @@ int	maxCMPExport::DoExport(const TCHAR *export_filename,ExpInterface *ei,Interfa
 
 		if(pMesh->IsGroupOwner() && !strcmp(pMesh->GetName(),"Root"))
 		{
-			ExportGroup(pMesh, string(export_filename));
+			if(bFoundRoot)
+			{
+				MessageBox(0,"You have more than one node with the name \"Root\"! One Root node has been picked as Root, however this might not be the intended one!","Warning exporting Root node.",MB_ICONERROR);
+				return 1;
+			}
+
+			if(!ExportGroup(pMesh, string(export_filename)))
+				return 1;
 			bFoundRoot = true;
-			break;
 		}
 	}
 		
