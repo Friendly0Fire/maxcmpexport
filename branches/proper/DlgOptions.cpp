@@ -18,229 +18,6 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
-//std::list<GLIST *> * nodeList;
-struct Part
-{
-    char ParentName[0x40];
-     char ChildName[0x40];
-     float OriginX;
-     float OriginY;
-     float OriginZ;
-     float RotMatXX;
-     float RotMatXY;
-     float RotMatXZ;
-     float RotMatYX;
-     float RotMatYY;
-     float RotMatYZ;
-     float RotMatZX;
-     float RotMatZY;
-     float RotMatZZ;
-};
-std::list<Part*> lstParts;
-
-void cDlgOptions::calculate_position( float * pos, MMESH * mesh)
-{
-	pos[0] = (mesh->v[0].vert[0] + mesh->v[1].vert[0] + mesh->v[2].vert[0]) / 3.0f;
-	pos[1] = (mesh->v[0].vert[1] + mesh->v[1].vert[1] + mesh->v[2].vert[1]) / 3.0f;
-	pos[2] = (mesh->v[0].vert[2] + mesh->v[1].vert[2] + mesh->v[2].vert[2]) / 3.0f;
-}
-
-
-void cDlgOptions::calculate_orientation( float * matrix, float * pos, char * name)
-{
-	// check special cases:
-	// Put identity matrix if:
-	if ( !_strnicmp(name,"HpEngine",8) || 
-		 !_strnicmp(name,"HpMount",7) ||
-		 !_strnicmp(name,"HpThruster",10)
-		 )
-	{
-		matrix[0] = 1.0f;
-		matrix[1] = 0.0f;
-		matrix[2] = 0.0f;
-
-		matrix[3] = 0.0f;
-		matrix[4] = 1.0f;
-		matrix[5] = 0.0f;
-
-		matrix[6] = 0.0f;
-		matrix[7] = 0.0f;
-		matrix[8] = 1.0f;
-
-		return;
-	}
-
-	// determine closest vertex and take note of vertex normal (will be used as Y vector later)
-	float normal[3];
-	float distance = 999999.0f;
-	list<MMESH *>::iterator i;
-	for (i = meshList->begin(); i != meshList->end(); i++)
-	{
-		MMESH * m = *i;
-	
-		// we don't care about hardpoint meshes (they are ficticious meshes, as far as we're concerned)
-		if (m->hardpoint) continue;
-
-/*
-		for (int j = 0; j < m->nVerts; j++)
-		{
-
-			float d1 = pos[0] - m->v[j].vert[0];
-			float d2 = pos[1] - m->v[j].vert[1];
-			float d3 = pos[2] - m->v[j].vert[2];
-
-			float d = d1 * d1 + d2 * d2 + d3 * d3;
-			d = sqrt (d);
-
-			if (d < distance)
-			{
-				distance = d;
-
-				normal[0] = m->v[j].normal[0];
-				normal[1] = m->v[j].normal[1];
-				normal[2] = m->v[j].normal[2];
-			}
-		}
-	}
-*/
-
-		for (int j = 0; j < m->nTris; j++)
-		{
-			float tri_center[3];
-			tri_center[0] = ( m->v[ m->t[j].vertice[0] ].vert[0] + m->v[ m->t[j].vertice[1] ].vert[0] + m->v[ m->t[j].vertice[2] ].vert[0] ) / 3;
-			tri_center[1] = ( m->v[ m->t[j].vertice[0] ].vert[1] + m->v[ m->t[j].vertice[1] ].vert[1] + m->v[ m->t[j].vertice[2] ].vert[1] ) / 3;
-			tri_center[2] = ( m->v[ m->t[j].vertice[0] ].vert[2] + m->v[ m->t[j].vertice[1] ].vert[2] + m->v[ m->t[j].vertice[2] ].vert[2] ) / 3;
-
-			float d1 = pos[0] - tri_center[0];
-			float d2 = pos[1] - tri_center[1];
-			float d3 = pos[2] - tri_center[2];
-
-			float d = d1 * d1 + d2 * d2 + d3 * d3;
-			d = sqrt (d);
-
-			if (d < distance)
-			{
-				distance = d;
-
-				normal[0] = m->tri_normals[j].vec[0];
-				normal[1] = m->tri_normals[j].vec[1];
-				normal[2] = m->tri_normals[j].vec[2];
-			}
-		}
-	}
-
-	normal[0] = -normal[0];
-
-	// calculate orientation matrix
-	if (normal[2] > -0.99999 && normal[2] < 0.99999)
-		{
-		// get Y vector
-		matrix[3] = normal[0];
-		matrix[4] = normal[1];
-		matrix[5] = normal[2];
-
-		// get X vector
-		matrix[0] = normal[1];
-		matrix[1] = -normal[0];
-		matrix[2] = 0;
-
-		// calculate Z vector
-		matrix[6] = matrix[1] * matrix[5] - matrix[2] * matrix[4];
-		matrix[7] = matrix[2] * matrix[3] - matrix[0] * matrix[5];
-		matrix[8] = matrix[0] * matrix[4] - matrix[1] * matrix[3];
-		}
-	else
-		{
-		// get Y vector
-		matrix[3] = normal[0];
-		matrix[4] = normal[1];
-		matrix[5] = normal[2];
-
-		// get Z vector
-		matrix[6] = 0;
-		matrix[7] = - normal[2];
-		matrix[8] = normal[1];
-
-		// calculate X vector
-		matrix[0] = matrix[4] * matrix[8] - matrix[5] * matrix[7];
-		matrix[1] = matrix[5] * matrix[6] - matrix[3] * matrix[8];
-		matrix[2] = matrix[3] * matrix[7] - matrix[4] * matrix[6];	
-		}
-}
-void cDlgOptions::create_hardpoints(HTREEITEM item)
-{
-	HTREEITEM fixed = utf->AddNewNode(tree, item, "Fixed");
-	HTREEITEM revolute = utf->AddNewNode(tree, item, "Revolute");
-
-	// iterate mesh list and create hardpoints
-	list<MMESH *>::iterator i;
-	for (i = meshList->begin(); i != meshList->end(); i ++)
-	{
-		MMESH * m = *i;
-		char * hp_name = 0;
-
-		// Hardpoint|Fixed|blah or Hardpoint|Revolute|blah
-		if ( !_strnicmp(m->nname, "Hp", 2) )
-		{
-			HTREEITEM parent = 0;
-			if ( !_strnicmp (m->nname + 3, "Fixed", 5) )
-			{
-				parent = fixed;
-				hp_name = m->nname + 9;	// pointer to name Hp|Fixed|name
-			}
-			else if ( !_strnicmp (m->nname + 3, "Revolute", 8) )
-			{
-				parent = revolute;
-				hp_name = m->nname + 12;	// pointer to name Hp|Revolute|name
-			}
-			else 
-				continue;
-
- 			HTREEITEM new_hp = utf->AddNewNode(tree, parent, hp_name);
-
-				// only revolute hardpoints have these
-				if (parent == revolute)
-				{
-					HTREEITEM axis = utf->AddNewNode(tree, new_hp, "Axis");
-						float * axis_data = (float *) malloc (12 + 4);
-						*(int *) axis_data = 12;
-						axis_data[1] = 0.0f;
-						axis_data[2] = 1.0f;
-						axis_data[3] = 0.0f;
-						tree->SetItemData(axis, (DWORD_PTR)axis_data);
-
-					HTREEITEM max = utf->AddNewNode(tree, new_hp, "Max");
-						float * max_data = (float *) malloc (8 + 4);
-						*(int *) max_data = 8;
-						max_data[1] = 0.785380f;
-						max_data[2] = 0.0f;
-						tree->SetItemData(max, (DWORD_PTR)max_data);
-
-					HTREEITEM min = utf->AddNewNode(tree, new_hp, "Min");
-						float * min_data = (float *) malloc (8 + 4);
-						*(int *) min_data = 8;
-						min_data[1] = -0.785400f;
-						min_data[2] = 0.0f;
-						tree->SetItemData(min, (DWORD_PTR)min_data);
-				}
-
-				// both fixed and revolute hardpoints have Orientation and Position
-						float * position_data = (float *) malloc (12 + 4);
-						*(int *) position_data = 12;
-						calculate_position( position_data + 1, m);
-
-						float * orientation_data = (float *) malloc (36 + 4);
-						*(int *) orientation_data = 36;
-						calculate_orientation( orientation_data + 1, position_data + 1, hp_name);
-
-					HTREEITEM orientation = utf->AddNewNode(tree, new_hp, "Orientation");
-						tree->SetItemData(orientation, (DWORD_PTR) orientation_data);
-
-					HTREEITEM position = utf->AddNewNode(tree, new_hp, "Position");
-						tree->SetItemData(position, (DWORD_PTR) position_data);
-		}
-	}
-}
 struct vwMesh {
 	int start_vertex, end_vertex, num_triangles;
 };
@@ -285,12 +62,12 @@ int cDlgOptions::create_vwiredata(HTREEITEM item, const TCHAR* WireDat)
 
 	strcpy (VMeshLibraryName, nameInList.c_str());
 	string sLod = ".lod";
-	sLod += (char)(48 + iLODs);
+	sLod += (char)(48 + OptionsDlgExport->iLOD);
 	sLod += ".vms";
 	strcat (VMeshLibraryName, sLod.c_str());
 	strcpy (VWireIn,WireDat);
 	string sWLod = ".lod";
-	sWLod += (char)(48 + iLODs);
+	sWLod += (char)(48 + OptionsDlgExport->iLOD);
 	sWLod += ".vwd";
 	strcat (VWireIn, sWLod.c_str());
 
@@ -360,7 +137,7 @@ int cDlgOptions::create_vwiredata(HTREEITEM item, const TCHAR* WireDat)
 		char sVWireOut[200];
 		strcpy (sVWireOut,WireDat);
 		string sVWLod = ".lod";
-		sVWLod += (char)(48 + iLODs);
+		sVWLod += (char)(48 + OptionsDlgExport->iLOD);
 		sVWLod += ".vwd2";
 		strcat (sVWireOut, sVWLod.c_str());
 		
@@ -404,22 +181,7 @@ int cDlgOptions::create_vwiredata(HTREEITEM item, const TCHAR* WireDat)
 	
  return 1;
 }
-int cDlgOptions::num_meshes()
-{
-	// iterate mesh list, calculate number of meshes
-	int nMesh = 0;
 
-	list<MMESH *>::iterator i;
-	for (i = meshList->begin(); i != meshList->end(); i ++)
-	{
-		MMESH * m = *i;
-
-		if ( _strnicmp(m->nname, "Hp", 2) )
-			nMesh ++;
-	}
-
-	return nMesh;
-}
 /*void write_parts()
 {
 	// Build your parts list.
@@ -491,27 +253,11 @@ END_MESSAGE_MAP()
 
 IGameNode *pMesh;
 sNodeInfo * snode;
-//ExportOptions OptionsDlgExport;
 
 BOOL cDlgOptions::OnInitDialog() 
 {
 	CDialog::OnInitDialog();
     CDialog::CenterWindow();
-
-	//ExportOptions OptionsDlgExport
-
-	//ExportOptions OptionsDlgExport;
-
-	//int iLOD = OptionsDlgExport.iLOD;
-/*    m_nFlags = eMeshes | eMaterials;
-    m_sPathName.Empty();
-
-    CheckDlgButton (IDC_BTMESHES, TRUE);
-    CheckDlgButton (IDC_BTMATERIALS, TRUE);
-*/	
-	//ExportOptions::ExportOptions();
-
-	
 
 
 	tree = (CTreeCtrl *) GetDlgItem(IDC_TREE);
@@ -519,10 +265,9 @@ BOOL cDlgOptions::OnInitDialog()
 	
 	list<GLIST *>::iterator GL;
 
-	list<MMESH *>::iterator i = meshList->begin();
-	MMESH * mesh = *i;
 	
 	// -------------------------------------
+	/*
 	char sVWireOut[200];
 	strcpy (sVWireOut,mesh->nname);
 	string sVWLod = ".lod";
@@ -537,14 +282,18 @@ BOOL cDlgOptions::OnInitDialog()
 	sLod += (char)(48 + iLODs);
 	sLod += ".vms";
 	strcat (VMeshLibraryName, sLod.c_str());
+	*/
 
 
 	HTREEITEM root = utf->AddNewNode(tree, NULL, "\\");
 		HTREEITEM VMeshLibrary = utf->AddNewNode(tree, root, "VMeshLibrary");
-			HTREEITEM meshdata = utf->AddNewNode(tree, VMeshLibrary, VMeshLibraryName);
-				HTREEITEM VMeshData = utf->AddNewNode(tree, meshdata, "VMeshData");
+
+			for(list<VMESHDATA_FILE*>::iterator it = lstVMeshData->begin(); it != lstVMeshData->end(); it++)
+			{
+				HTREEITEM meshdata = utf->AddNewNode(tree, VMeshLibrary, (char*)(*it)->sFilename.c_str());
+					HTREEITEM VMeshData = utf->AddNewNode(tree, meshdata, "VMeshData");
 					// attach temporary vms file to this node
-					FILE * VMeshData_file = fopen ("___temp.vms","rb");
+					FILE * VMeshData_file = fopen((*it)->sFilename.c_str(), "rb");
 					fseek (VMeshData_file, 0, SEEK_END);
 					int VMeshData_file_size = ftell(VMeshData_file);
 					fseek (VMeshData_file, 0, SEEK_SET);
@@ -553,29 +302,68 @@ BOOL cDlgOptions::OnInitDialog()
 					*(int *)VMeshData_file_data = VMeshData_file_size;	// first 4 bytes is the size, data comes afterwards
 					tree->SetItemData(VMeshData, (DWORD_PTR)VMeshData_file_data);
 					fclose(VMeshData_file);
+					// delete temporary file
+					unlink((char*)(*it)->sFilename.c_str());
+			}
+
 
 		HTREEITEM Cmpnd = utf->AddNewNode(tree, root, "Cmpnd");
-			HTREEITEM Cmpnd_root = utf->AddNewNode(tree, Cmpnd, "Root");
-				HTREEITEM CR_filename = utf->AddNewNode(tree, Cmpnd_root, "File name");
+
+			HTREEITEM Cmpnd_cons = utf->AddNewNode(tree, Cmpnd, "Cons");
+
+				HTREEITEM Cmpnd_fixnode = utf->AddNewNode(tree, Cmpnd_cons, "Fix");
+					FILE * fixdata_file = fopen("fixnode.bin", "rb");
+					fseek (fixdata_file, 0, SEEK_END);
+					int fixdata_file_size = ftell(fixdata_file);
+					fseek (fixdata_file, 0, SEEK_SET);
+					char * fixdata_file_data = (char *)malloc (fixdata_file_size + 4);
+					fread (fixdata_file_data + 4, fixdata_file_size, 1, fixdata_file);
+					*(int *)fixdata_file_data = fixdata_file_size;	// first 4 bytes is the size, data comes afterwards
+					tree->SetItemData(Cmpnd_fixnode, (DWORD_PTR)fixdata_file_data);
+					fclose(fixdata_file);
+					// delete temporary file
+					unlink("fixnode.bin");
+
+		for(list<CMPND_DATA*>::iterator itcmpnd = lstCMPData->begin(); itcmpnd != lstCMPData->end(); itcmpnd++)
+		{
+			HTREEITEM Cmpnd_item = utf->AddNewNode(tree, Cmpnd, (char*)(*itcmpnd)->sName.c_str());
+				HTREEITEM CR_filename = utf->AddNewNode(tree, Cmpnd_item, "File name");
 					// set data entry for "File name"
-					char * CR_filename_data = (char *) malloc ( strlen(mesh->nname) + strlen (".3db") + 1 + 4);
-					strcpy (CR_filename_data + 4, mesh->nname);	// 4 = int position at beginning
-					strcat (CR_filename_data + 4, ".3db");
-					*(size_t *)CR_filename_data = strlen(mesh->nname) + 4 + 1;	// 4 = strlen(".3db") 1 = '\0'
+					char * CR_filename_data = (char *) malloc ( (*itcmpnd)->object_data->sFileName.size() + 4);
+					strcpy (CR_filename_data + 4, (*itcmpnd)->object_data->sFileName.c_str());	// 4 = int position at beginning
+					*(size_t *)CR_filename_data = (*itcmpnd)->object_data->sFileName.size() + 4;	
 					tree->SetItemData(CR_filename, (DWORD_PTR)CR_filename_data);
-				HTREEITEM CR_index = utf->AddNewNode(tree, Cmpnd_root, "Index");
+				HTREEITEM CR_index = utf->AddNewNode(tree, Cmpnd_item, "Index");
 					// set data entry for "Index"
-					int * CR_index_data = (int *)malloc (2*sizeof(int) + 4);
-					CR_index_data[0] = 8;	// size = 8 (2 integers)
-					CR_index_data[1] = 0;
-					CR_index_data[2] = 0;
+					int * CR_index_data = (int *)malloc (sizeof(int) + 4);
+					CR_index_data[0] = 4;	// size = 8 (1 integer + size data)
+					CR_index_data[1] = (*itcmpnd)->index;
 					tree->SetItemData(CR_index, (DWORD_PTR)CR_index_data);
-				HTREEITEM CR_objname = utf->AddNewNode(tree, Cmpnd_root, "Object name");
+				HTREEITEM CR_objname = utf->AddNewNode(tree, Cmpnd_item, "Object name");
 					// set data entry for "Object name"
-					char * CR_objname_data = (char *) malloc ( strlen("Root") + 1 + 4 );
-					strcpy (CR_objname_data + 4, "Root");
-					*(size_t *)CR_objname_data = strlen("Root") + 1;
+					char * CR_objname_data = (char *) malloc ( (*itcmpnd)->sObjectName.size() + 4);
+					strcpy (CR_objname_data + 4, (*itcmpnd)->sObjectName.c_str());
+					*(size_t *)CR_objname_data = (*itcmpnd)->sObjectName.size() + 4;
 					tree->SetItemData(CR_objname, (DWORD_PTR)CR_objname_data);
+
+
+				HTREEITEM Cmpnd_threedb = utf->AddNewNode(tree, root, (char*)(*itcmpnd)->object_data->sFileName.c_str());
+					HTREEITEM Cmpnd_multilevel = utf->AddNewNode(tree, Cmpnd_threedb, "MultiLevel");
+					string sLevel = "Level";
+					sLevel += (char)(48 + OptionsDlgExport->iLOD);
+						HTREEITEM Cmpnd_lodlevel = utf->AddNewNode(tree, Cmpnd_multilevel, (char*)sLevel.c_str());
+							HTREEITEM Cmpnd_VMeshPart = utf->AddNewNode(tree, Cmpnd_lodlevel, "VMeshPart");
+								HTREEITEM Cmpnd_VMeshRef = utf->AddNewNode(tree, Cmpnd_VMeshPart, "VMeshRef");
+									char* Cmpdn_vmeshref_data = (char *) malloc ( sizeof(VMeshRef) + 4);
+									*(VMeshRef*)(Cmpdn_vmeshref_data+4) = (*itcmpnd)->object_data->vmeshref;
+									*(int*)Cmpdn_vmeshref_data = sizeof(VMeshRef);
+									tree->SetItemData(Cmpnd_VMeshRef, (DWORD_PTR)Cmpdn_vmeshref_data);
+			
+		}
+
+
+
+		/*
 
 		char objName[200];
 		char PartName[200];
@@ -754,11 +542,11 @@ BOOL cDlgOptions::OnInitDialog()
 							//VMeshRef_data[4] = 0;
 							//VMeshRef_data[5] = num_meshes() << 16;
 
+	*/
 							
 	
 	utf->Save(tree, fileName);
-	// -------------------------------------
-	lstNames.clear();
+
 
 	return TRUE;
 }
@@ -785,33 +573,11 @@ void cDlgOptions::OnCancel()
 
 // CMP exporter methods here
 
-void cDlgOptions::SetGroup(list<GLIST *> * nodeList)
-{
-	this->nodeList = nodeList;
-}
-void cDlgOptions::SetMesh(list<MMESH *> * meshList)
-{
-	this->meshList = meshList;
-}
-
 void cDlgOptions::SetFileName(char * fileName)
 {
 	strcpy (this->fileName, fileName);
 }
 
-void cDlgOptions::SetComponentMode(EXPORT_CMPNT_OPTION mode)
-{
-	cmpnt_mode = mode;
-}
-
-void cDlgOptions::SetLODs(int lod_setting)
-{
-	iLODs = lod_setting;
-}
-void cDlgOptions::SetWire(int wire_setting)
-{
-	sWire = wire_setting;
-}
 //======================================================================
 // OnOK
 //======================================================================

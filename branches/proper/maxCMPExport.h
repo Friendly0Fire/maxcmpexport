@@ -313,6 +313,50 @@ struct VMESHDATA_FILE
 	uint nMeshes;
 };
 
+struct PartFix
+{
+     char ParentName[0x40];
+     char ChildName[0x40];
+     float OriginX;
+     float OriginY;
+     float OriginZ;
+     float RotMatXX;
+     float RotMatXY;
+     float RotMatXZ;
+     float RotMatYX;
+     float RotMatYY;
+     float RotMatYZ;
+     float RotMatZX;
+     float RotMatZY;
+     float RotMatZZ;
+};
+
+struct PartRev
+{
+     char ParentName[0x40];
+     char ChildName[0x40];
+     float OriginX;
+     float OriginY;
+     float OriginZ;
+	 float OffsetX;
+	 float OffsetY;
+     float OffsetZ;
+     float RotMatXX;
+     float RotMatXY;
+     float RotMatXZ;
+     float RotMatYX;
+     float RotMatYY;
+     float RotMatYZ;
+     float RotMatZX;
+     float RotMatZY;
+     float RotMatZZ;
+	 float AxisRotX;
+     float AxisRotY;
+     float AxisRotZ;
+     float Min;
+     float Max;
+};
+
 struct CMPND_DATA
 {
 	string sName;
@@ -367,7 +411,5 @@ extern PlugPanel thePlugPanel;
 extern TCHAR *GetString(int id);
 
 extern HINSTANCE hInstance;
-
-
 
 #endif
