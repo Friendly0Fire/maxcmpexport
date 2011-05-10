@@ -145,7 +145,7 @@ void UTF::insert_nodes(CTreeCtrl * tree, NODE * node, int node_size, char * stri
 				char * node_data = (char *)malloc (aux_node->allocated_size + 4);
 				memcpy (node_data + 4, aux_node->child_offset + data, aux_node->allocated_size);
 				*(int *)node_data = aux_node->allocated_size;
-				tree->SetItemData(self, (DWORD_PTR)node_data);
+				tree->SetItemData(self, (DWORD)node_data);
 			}
 			else
 				tree->SetItemData(self, 0);

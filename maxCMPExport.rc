@@ -13,7 +13,7 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// German (Germany) resources
+// Deutsch (Deutschland) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_DEU)
 #ifdef _WIN32
@@ -26,7 +26,7 @@ LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
 // Dialog
 //
 
-IDD_EXPORTOPTIONS DIALOGEX 0, 0, 276, 220
+IDD_EXPORTOPTIONS DIALOGEX 0, 0, 276, 171
 STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "3DS MAX CMP Exporter"
 FONT 8, "MS Shell Dlg", 0, 0, 0x0
@@ -40,14 +40,10 @@ BEGIN
                     "Button",BS_AUTORADIOBUTTON | WS_DISABLED,20,93,178,10
     CONTROL         "Export Tangent/Binormal Info (for Normal Mapping)",IDC_TANGENTS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,116,177,14
-    DEFPUSHBUTTON   "OK",IDOK,141,169,50,14
-    PUSHBUTTON      "Cancel",IDCANCEL,205,169,50,14
+    DEFPUSHBUTTON   "OK",IDOK,139,140,50,14
+    PUSHBUTTON      "Cancel",IDCANCEL,203,140,50,14
     LTEXT           "LOD Number:",IDC_STATIC,21,18,44,8
     COMBOBOX        IDC_COMBO1,73,16,48,30,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
-    CONTROL         "Starsphere",IDC_VCOLOR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,132,108,18
-    CONTROL         "Wireframe",IDC_WIREFRAME,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,152,105,17
-    CONTROL         "2 UV maps",IDC_VUVM2,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,173,49,10
-    CONTROL         "ARGB + Normals",IDC_VCOLORENH,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,188,69,10
 END
 
 IDD_ABOUTBOX DIALOGEX 0, 0, 159, 94
@@ -72,7 +68,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 269
         TOPMARGIN, 7
-        BOTTOMMARGIN, 213
+        BOTTOMMARGIN, 164
     END
 
     IDD_ABOUTBOX, DIALOG
@@ -108,18 +104,46 @@ BEGIN
     0
 END
 
-#endif    // German (Germany) resources
+#endif    // Deutsch (Deutschland) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.K.) resources
+// Englisch (GB) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
 #ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
 #pragma code_page(1252)
 #endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
+    "#define _AFX_NO_OLE_RESOURCES\r\n"
+    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
+    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
+    "\r\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -155,34 +179,6 @@ END
 #endif    // APSTUDIO_INVOKED
 
 
-#ifdef APSTUDIO_INVOKED
-/////////////////////////////////////////////////////////////////////////////
-//
-// TEXTINCLUDE
-//
-
-1 TEXTINCLUDE 
-BEGIN
-    "resource.h\0"
-END
-
-2 TEXTINCLUDE 
-BEGIN
-    "#include ""afxres.h""\r\0"
-END
-
-3 TEXTINCLUDE 
-BEGIN
-    "#define _AFX_NO_SPLITTER_RESOURCES\r\n"
-    "#define _AFX_NO_OLE_RESOURCES\r\n"
-    "#define _AFX_NO_TRACKER_RESOURCES\r\n"
-    "#define _AFX_NO_PROPERTY_RESOURCES\r\n"
-    "\r\0"
-END
-
-#endif    // APSTUDIO_INVOKED
-
-
 /////////////////////////////////////////////////////////////////////////////
 //
 // String Table
@@ -206,7 +202,7 @@ BEGIN
     IDS_LIBDESCRIPTION      "CMP File Exporter (Autodesk)"
 END
 
-#endif    // English (U.K.) resources
+#endif    // Englisch (GB) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
