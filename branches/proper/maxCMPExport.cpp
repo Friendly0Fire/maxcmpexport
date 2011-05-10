@@ -340,6 +340,15 @@ FILE* prisnode;
 bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMPData)
 {
 
+	Point3 objoffset = pRootGrp->GetMaxNode()->GetObjOffsetPos();
+
+	Box3 BoundsRoot;
+	pRootGrp->GetIGameObject()->GetBoundingBox(BoundsRoot);
+	
+	Point3 objcenter = BoundsRoot.Center();
+
+	// todo: use objoffset and objcenter to offset object using the cons node
+
 	CMPND_DATA* cmpnd = new CMPND_DATA;
 
 	cmpnd->index = 0;
@@ -463,9 +472,6 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 		}
 	}
 
-
-	Box3 BoundsRoot;
-	pRootGrp->GetIGameObject()->GetBoundingBox(BoundsRoot);
 
 	cmpnd->object_data->vmeshref.bmaxx = BoundsRoot.pmax.x;
 	cmpnd->object_data->vmeshref.bmaxy = BoundsRoot.pmax.y;
