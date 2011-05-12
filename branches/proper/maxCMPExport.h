@@ -50,6 +50,8 @@ using namespace std;
 
 
 #define CFGFILENAME		_T("maxCMPExport.CFG")
+#define CMPEXPORT_VERSION 0.9
+#define MAX_LODS 6
 
 typedef unsigned int uint;
 
@@ -60,12 +62,21 @@ struct FileName_
 
 enum EXPORT_CMPNT_OPTION
 {
-	EXPORT_CMPNT_NONE = 0,
-	EXPORT_CMPNT_RELOCATE = 1,
-	EXPORT_CMPNT_NORELOCATE = 2		
+	EXPORT_CMPNT_RELOCATE = 0,
+	EXPORT_CMPNT_NORELOCATE = 1,
+	EXPORT_CMPNT_FORCE_DWORD = 0x7FFFFFFF
 };
 
-
+enum FVF_TYPE
+{
+	FVF_NORMAL,
+	FVF_VERTEXARGB,
+	FVF_VERTEXARGB_NORMALS,
+	FVF_EXTRAUV,
+	FVF_TANGENTS,
+	FVF_EXTRAUV_TANGENTS,
+	FVF_TYPE_FORCE_DWORD = 0x7FFFFFFF
+};
 
 unsigned int fl_crc32(char *);
 
@@ -98,31 +109,14 @@ struct VWireData
 struct VWireMesh {
 	int start_vertex, end_vertex, num_triangles;
 };
+
 struct vmsVert
 {
 	Point3 vert;
 	Point3 normal;
+	uint diffuse;
 	Point2 uv;
-};
-struct gvmsVert
-{
-	Point3 gvert;
-	Point3 gnormal;
-	Point2 guv;
-};
-struct gvmsVertEnh
-{
-	Point3 gvert;
-	Point3 gnormal;
-	Point2 guv;
-	Point3 gtangent;
-	Point3 gbinormal;
-};
-struct vmsVertEnh
-{
-	Point3 vert;
-	Point3 normal;
-	Point2 uv;
+	Point2 uv2;
 	Point3 tangent;
 	Point3 binormal;
 };
@@ -163,18 +157,7 @@ struct VMeshRef
 
 };
 
-struct gvmsVertColor
-{
- Point3 gvert;
- uint gdiffuse; // (4 bytes alpha-r-g-b or might be alpha-b-g-r)
- Point2 guv;
-};
-struct vmsVertColor
-{
- Point3 vert;
- uint diffuse; // (4 bytes alpha-r-g-b or might be alpha-b-g-r)
- Point2 uv;
-};
+
 struct vmsTri
 {
 	unsigned short vertice[3];
@@ -248,46 +231,12 @@ struct MSpline
 
 	//IGameMesh *pMesh; // 3ds max mesh object
 };
-struct GMMESH
-{
-	gvmsVertEnh * gv;	// vmsVert array
-	gvmsTri * gt;		// vmsTri array
-	VMeshRef * vmeshre;
-	gvmsVertColor * gvc;
-	int gnVerts;
-	int gnTris;
-	uint gNum_Meshes;
-	
-	TCHAR *  gmaterial;	// material name
-	TCHAR * gnname;	// mesh name
-	bool ghardpoint;	
-	VECTOR * gtri_normals;
 
-	IGameMesh *gpMesh; // 3ds max mesh object
-};
-struct MMESH
-{
-	vmsVertEnh * v;	// vmsVert array
-	vmsTri * t;		// vmsTri array
-	VMeshRef * vmeshre;
-	vmsVertColor * vc;
-	int nVerts;
-	int nTris;
-	uint Num_Meshes;
-	
-	TCHAR *  material;	// material name
-	TCHAR * nname;	// mesh name
-	bool hardpoint;	
-	VECTOR * tri_normals;
-
-	IGameMesh *pMesh; // 3ds max mesh object
-};
 
 struct SMESH
 {
-	vmsVertEnh * v;	// vmsVert array
+	vmsVert * v;	// vmsVert array
 	vmsTri * t;		// vmsTri array
-	vmsVertColor * vc;
 	int nVerts;
 	int nTris;
 	
@@ -295,13 +244,6 @@ struct SMESH
 	string sName;	// mesh name
 
 	IGameMesh *pMesh; // 3ds max mesh object
-};
-
-struct THREEDB_DATA
-{
-	string sFileName; 
-	VMeshRef vmeshref;
-	list<SMESH*> meshes;
 };
 
 struct VMESHDATA_FILE
@@ -312,6 +254,21 @@ struct VMESHDATA_FILE
 	uint nVertices;
 	uint nMeshes;
 };
+
+struct LOD_DATA
+{
+	VMESHDATA_FILE* vmeshdata_file;
+	VMeshRef vmeshref;
+	list<SMESH*> meshes;
+};
+
+struct THREEDB_DATA
+{
+	string sFileName; 
+	uint iLODs;
+	LOD_DATA data[MAX_LODS];
+};
+
 
 struct PartFix
 {
@@ -362,7 +319,6 @@ struct CMPND_DATA
 	string sName;
 	string sObjectName;
 	THREEDB_DATA* object_data;
-	VMESHDATA_FILE* vmeshdata_file;
 	int index;
 };
 
