@@ -35,7 +35,7 @@ void check_if_line_exists_and_add_if_not(struct Line *lines, int *num_lines, str
 	lines[*num_lines] = new_line;
 	++(*num_lines);
 }
-
+/*
 int cDlgOptions::create_vwiredata(HTREEITEM item, const TCHAR* WireDat)
 {
 	
@@ -181,6 +181,7 @@ int cDlgOptions::create_vwiredata(HTREEITEM item, const TCHAR* WireDat)
 	
  return 1;
 }
+*/
 
 /*void write_parts()
 {
@@ -220,6 +221,7 @@ int cDlgOptions::create_vwiredata(HTREEITEM item, const TCHAR* WireDat)
 	lstParts.clear();
 }*/
 
+
 //======================================================================
 // constructor
 //======================================================================
@@ -251,8 +253,23 @@ END_MESSAGE_MAP()
 // OnInitDialog
 //======================================================================
 
-IGameNode *pMesh;
-sNodeInfo * snode;
+void cDlgOptions::AddFileAsNode(HTREEITEM parent, const char* szFileName, const char* szNodeName)
+{
+	FILE * file = fopen(szFileName, "rb");
+	fseek (file, 0, SEEK_END);
+	uint file_size = ftell(file);
+	if(file_size > 0)
+	{
+		HTREEITEM node = utf->AddNewNode(tree, parent, (char*)szNodeName);
+		fseek (file, 0, SEEK_SET);
+		char * file_data = (char *)malloc (file_size + 4);
+		fread (file_data + 4, file_size, 1, file);
+		*(int *)file_data = file_size;	// first 4 bytes is the size, data comes afterwards
+		tree->SetItemData(node, (DWORD_PTR)file_data);
+	}
+	fclose(file);
+	unlink(szFileName);
+}
 
 BOOL cDlgOptions::OnInitDialog() 
 {
@@ -291,38 +308,16 @@ BOOL cDlgOptions::OnInitDialog()
 			for(list<VMESHDATA_FILE*>::iterator it = lstVMeshData->begin(); it != lstVMeshData->end(); it++)
 			{
 				HTREEITEM meshdata = utf->AddNewNode(tree, VMeshLibrary, (char*)(*it)->sFilename.c_str());
-					HTREEITEM VMeshData = utf->AddNewNode(tree, meshdata, "VMeshData");
-					// attach temporary vms file to this node
-					FILE * VMeshData_file = fopen((*it)->sFilename.c_str(), "rb");
-					fseek (VMeshData_file, 0, SEEK_END);
-					int VMeshData_file_size = ftell(VMeshData_file);
-					fseek (VMeshData_file, 0, SEEK_SET);
-					char * VMeshData_file_data = (char *)malloc (VMeshData_file_size + 4);
-					fread (VMeshData_file_data + 4, VMeshData_file_size, 1, VMeshData_file);
-					*(int *)VMeshData_file_data = VMeshData_file_size;	// first 4 bytes is the size, data comes afterwards
-					tree->SetItemData(VMeshData, (DWORD_PTR)VMeshData_file_data);
-					fclose(VMeshData_file);
-					// delete temporary file
-					unlink((char*)(*it)->sFilename.c_str());
+					AddFileAsNode(meshdata, (*it)->sFilename.c_str(), "VMeshData");
 			}
 
 
 		HTREEITEM Cmpnd = utf->AddNewNode(tree, root, "Cmpnd");
 
 			HTREEITEM Cmpnd_cons = utf->AddNewNode(tree, Cmpnd, "Cons");
-
-				HTREEITEM Cmpnd_fixnode = utf->AddNewNode(tree, Cmpnd_cons, "Fix");
-					FILE * fixdata_file = fopen("fixnode.bin", "rb");
-					fseek (fixdata_file, 0, SEEK_END);
-					int fixdata_file_size = ftell(fixdata_file);
-					fseek (fixdata_file, 0, SEEK_SET);
-					char * fixdata_file_data = (char *)malloc (fixdata_file_size + 4);
-					fread (fixdata_file_data + 4, fixdata_file_size, 1, fixdata_file);
-					*(int *)fixdata_file_data = fixdata_file_size;	// first 4 bytes is the size, data comes afterwards
-					tree->SetItemData(Cmpnd_fixnode, (DWORD_PTR)fixdata_file_data);
-					fclose(fixdata_file);
-					// delete temporary file
-					unlink("fixnode.bin");
+				AddFileAsNode(Cmpnd_cons, "fixnode.bin", "Fix");
+				AddFileAsNode(Cmpnd_cons, "revnode.bin", "Rev");
+				AddFileAsNode(Cmpnd_cons, "prisnode.bin", "Pris");
 
 		for(list<CMPND_DATA*>::iterator itcmpnd = lstCMPData->begin(); itcmpnd != lstCMPData->end(); itcmpnd++)
 		{
@@ -349,15 +344,19 @@ BOOL cDlgOptions::OnInitDialog()
 
 				HTREEITEM Cmpnd_threedb = utf->AddNewNode(tree, root, (char*)(*itcmpnd)->object_data->sFileName.c_str());
 					HTREEITEM Cmpnd_multilevel = utf->AddNewNode(tree, Cmpnd_threedb, "MultiLevel");
-					string sLevel = "Level";
-					sLevel += (char)(48 + OptionsDlgExport->iLOD);
-						HTREEITEM Cmpnd_lodlevel = utf->AddNewNode(tree, Cmpnd_multilevel, (char*)sLevel.c_str());
-							HTREEITEM Cmpnd_VMeshPart = utf->AddNewNode(tree, Cmpnd_lodlevel, "VMeshPart");
-								HTREEITEM Cmpnd_VMeshRef = utf->AddNewNode(tree, Cmpnd_VMeshPart, "VMeshRef");
-									char* Cmpdn_vmeshref_data = (char *) malloc ( sizeof(VMeshRef) + 4);
-									*(VMeshRef*)(Cmpdn_vmeshref_data+4) = (*itcmpnd)->object_data->vmeshref;
-									*(int*)Cmpdn_vmeshref_data = sizeof(VMeshRef);
-									tree->SetItemData(Cmpnd_VMeshRef, (DWORD_PTR)Cmpdn_vmeshref_data);
+
+					for(uint iLOD = 0; iLOD < (*itcmpnd)->object_data->iLODs; iLOD++)
+					{
+						string sLevel = "Level";
+						sLevel += (char)(48 + iLOD);
+							HTREEITEM Cmpnd_lodlevel = utf->AddNewNode(tree, Cmpnd_multilevel, (char*)sLevel.c_str());
+								HTREEITEM Cmpnd_VMeshPart = utf->AddNewNode(tree, Cmpnd_lodlevel, "VMeshPart");
+									HTREEITEM Cmpnd_VMeshRef = utf->AddNewNode(tree, Cmpnd_VMeshPart, "VMeshRef");
+										char* Cmpdn_vmeshref_data = (char *) malloc ( sizeof(VMeshRef) + 4);
+										*(VMeshRef*)(Cmpdn_vmeshref_data+4) = (*itcmpnd)->object_data->data[iLOD].vmeshref;
+										*(int*)Cmpdn_vmeshref_data = sizeof(VMeshRef);
+										tree->SetItemData(Cmpnd_VMeshRef, (DWORD_PTR)Cmpdn_vmeshref_data);
+					}
 			
 		}
 

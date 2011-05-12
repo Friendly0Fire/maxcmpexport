@@ -39,7 +39,6 @@ private:
 	int create_vwiredata(HTREEITEM, const TCHAR* nameInList);
 	void create_hardpoints(HTREEITEM);
 	
-	void calculate_position( float * pos, MMESH * mesh);
 	void calculate_orientation( float * matrix, float * pos, char * name);
 	int VertQuantity();
 	
@@ -72,6 +71,7 @@ public:
 protected:
 
 	//{{AFX_MSG(cDlgOptions)
+	void AddFileAsNode(HTREEITEM parent, const char* szFileName, const char* szNodeName);
 	virtual BOOL OnInitDialog();
 	afx_msg void OnClose();
 	virtual void OnCancel();
