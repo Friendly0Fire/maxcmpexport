@@ -12,7 +12,7 @@ IMPLEMENT_DYNAMIC(ExportOptions, CDialog)
 
 ExportOptions::ExportOptions(CWnd* pParent /*=NULL*/)
 	: CDialog(ExportOptions::IDD, pParent)
-	, bWireFrame(FALSE)
+	, bWireFrame(TRUE)
 	, eRadioCmpnts(EXPORT_CMPNT_RELOCATE)
 	, eFVFtype(FVF_NORMAL)
 {
@@ -28,7 +28,7 @@ void ExportOptions::DoDataExchange(CDataExchange* pDX)
 	CDialog::DoDataExchange(pDX);
 	DDX_Check(pDX, IDC_WIREFRAME, (int&)bWireFrame);
 	DDX_Radio(pDX, IDC_CMPNT_RELOCATE, (int&)eRadioCmpnts);
-	DDX_CBIndex(pDX, IDC_COMBO2, (int&)eFVFtype);
+	DDX_CBIndex(pDX, IDC_VERTEXTYPE, (int&)eFVFtype);
 }
 
 

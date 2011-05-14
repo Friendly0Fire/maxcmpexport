@@ -141,6 +141,8 @@ public:
 	void			ShowOptions(HWND hWnd);
 
 
+	void check_line(Line *lines, uint *num_lines, Line new_line);
+	void CreateVWData(CMPND_DATA* cmpnd);
 	bool ExportGroup(IGameNode * pMesh, string);
 	bool CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMPData);
 	BOOL	nodeEnum(INode* node);
@@ -333,17 +335,6 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 {
 	Point3 vOffset = Point3(0,0,0);
 
-	if(OptionsDlgExport->eRadioCmpnts == EXPORT_CMPNT_RELOCATE)
-	{
-		Point3 objoffset = pRootGrp->GetMaxNode()->GetObjOffsetPos();
-
-		Box3 BoundsRoot;
-		pRootGrp->GetIGameObject()->GetBoundingBox(BoundsRoot);
-		Point3 objcenter = BoundsRoot.Center();
-		
-		vOffset = objcenter - objoffset;
-	}
-
 
 	CMPND_DATA* cmpnd = new CMPND_DATA;
 
@@ -355,9 +346,23 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 	{
 		cmpnd->sName = "Part_";
 		cmpnd->sName += cmpnd->sObjectName;
+
+		// offset only on component parts!
+		if(OptionsDlgExport->eRadioCmpnts == EXPORT_CMPNT_RELOCATE)
+		{
+			Point3 objoffset = pRootGrp->GetMaxNode()->GetObjOffsetPos();
+
+			Box3 BoundsRoot;
+			pRootGrp->GetIGameObject()->GetBoundingBox(BoundsRoot);
+			Point3 objcenter = BoundsRoot.Center();
+			
+			vOffset = objcenter - objoffset;
+		}
 	}
 
 	cmpnd->object_data = new THREEDB_DATA;
+
+	cmpnd->object_data->iLODWireframe = 0;
 
 	uint iNumVerts = 0;
 	uint iNumFaces = 0;
@@ -376,12 +381,15 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 			iLOD = ((int)cur_lodnode->GetName()[(strlen(cur_lodnode->GetName())-1)]) - 48;
 			if(iLOD > (MAX_LODS-1))
 			{
-				// todo error box
+				MessageBox(0,"You have specified a higher LOD number than supported (0 to 5)","Error exporting LOD",MB_ICONERROR);
 				continue; // ignore
 			}
+			if(string(cur_lodnode->GetName()).substr(0,3) == "vwd")
+				cmpnd->object_data->iLODWireframe = iLOD;
+
 		} else
 		{
-			// todo error box
+			MessageBox(0,"The node under your component must specify the lod.","Error exporting LOD",MB_ICONERROR);
 			continue; // ignore
 		}
 
@@ -404,7 +412,16 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 
 				// material
 				IGameMaterial *pMaterial = cur_node->GetNodeMaterial();
-				mesh->sMaterial = string(pMaterial->GetMaterialName());
+				if(pMaterial==NULL)
+                {
+					MessageBox(0,"No material on one of the meshes, adding default name","Error exporting Material",MB_ICONERROR);
+					mesh->sMaterial = "default";
+                } else
+				{
+					mesh->sMaterial = string(pMaterial->GetMaterialName());
+					if(pMaterial->GetSubMaterialCount())
+						MessageBox(0,"Freelancer does not support sub-materials!","Error exporting Material",MB_ICONERROR);
+				}
 
 				// mesh name
 				mesh->sName = string(cur_node->GetName());
@@ -594,6 +611,88 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 	return true;
 }
 
+void maxCMPExport::check_line(Line *lines, uint *num_lines, Line new_line) {
+	uint i;
+	for (i = 0; i < *num_lines; ++i) {
+		if (((lines[i].v1 == new_line.v1) && (lines[i].v2 == new_line.v2)) || ((lines[i].v1 == new_line.v2) && (lines[i].v2 == new_line.v1)))
+			return;
+	}
+	lines[*num_lines] = new_line;
+	++(*num_lines);
+}
+
+static uint iTotalVWireIndices = 0;
+
+string convertInt(int number)
+{
+    if (number == 0)
+        return "0";
+    string temp="";
+    string returnvalue="";
+    while (number>0)
+    {
+        temp+=number%10+48;
+        number/=10;
+    }
+    for (int i=0;i<(int)temp.length();i++)
+        returnvalue+=temp[temp.length()-i-1];
+    return returnvalue;
+}
+
+void maxCMPExport::CreateVWData(CMPND_DATA* cmpnd)
+{
+	uint iLOD = cmpnd->object_data->iLODWireframe;
+
+	VWireData vwire;
+
+	vwire.StructSize = 16;
+	vwire.VMeshLibID = fl_crc32((char*)cmpnd->object_data->data[iLOD].vmeshdata_file->sFilename.c_str());
+	vwire.VertBase = cmpnd->object_data->data[iLOD].vmeshref.Start_Vert;
+
+	// array as big as number of faces*2
+	uint num_lines = 0;
+	Line* lines = (Line*)malloc(((cmpnd->object_data->data[iLOD].vmeshref.Num_Index)/3)*2 * sizeof(Line));
+
+	uint iVertOffset = 0;
+
+	for(list<SMESH*>::iterator meshiter = cmpnd->object_data->data[iLOD].meshes.begin(); meshiter != cmpnd->object_data->data[iLOD].meshes.end(); meshiter++)
+	{
+		SMESH* mesh = *meshiter;
+		for(uint nFace = 0;nFace < (uint)mesh->nTris; nFace++)
+		{
+			Line templine;
+			templine.v1 = iVertOffset + mesh->t[nFace].vertice[0];
+			templine.v2 = iVertOffset + mesh->t[nFace].vertice[1];
+			check_line(lines, &num_lines, templine);
+			templine.v1 = iVertOffset + mesh->t[nFace].vertice[0];
+			templine.v2 = iVertOffset + mesh->t[nFace].vertice[2];
+			check_line(lines, &num_lines, templine);
+		}
+		iVertOffset += mesh->nVerts;
+	}
+
+	vwire.VertRange = iVertOffset;
+	vwire.RefVertQuant = num_lines * 2;
+	vwire.VertQuant = cmpnd->object_data->data[iLOD].vmeshref.Num_Vert;
+
+	iTotalVWireIndices += vwire.RefVertQuant;
+
+	if(iTotalVWireIndices > 16000)
+	{
+		string sError = "Your total indices count for the Wireframe exceeds Freelancer's limit of 16 000. Indices: ";
+		sError += convertInt(iTotalVWireIndices);
+		MessageBox(0,sError.c_str(),"Error exporting VWireData",MB_ICONERROR);
+	}
+
+	// write file
+	string sVWDFile = cmpnd->sObjectName + ".vwd";
+	FILE* fVWire = fopen(sVWDFile.c_str(), "wb");
+	fwrite(&vwire, sizeof(VWireData), 1, fVWire);
+	fwrite(lines, sizeof(Line), num_lines, fVWire);
+	fclose(fVWire);
+
+}
+
 
 bool maxCMPExport::ExportGroup(IGameNode * pRootGrp, string sExportFilename)
 {	
@@ -641,8 +740,6 @@ bool maxCMPExport::ExportGroup(IGameNode * pRootGrp, string sExportFilename)
 				cur_meshdata_file = new VMESHDATA_FILE;
 				cur_meshdata_file->sFilename = sFilenameSubstr;
 				cur_meshdata_file->sFilename += (char)(48+ (int)lstVMeshData->size());
-	//			cur_meshdata_file->sFilename += ".lod";
-	//			cur_meshdata_file->sFilename += (char)(48+ OptionsDlgExport->iLOD);
 				cur_meshdata_file->sFilename += ".vms";
 				cur_meshdata_file->nVertices = 0;
 				cur_meshdata_file->nRefVertices = 0;
@@ -874,6 +971,12 @@ bool maxCMPExport::ExportGroup(IGameNode * pRootGrp, string sExportFilename)
 		fclose((*it)->file);
 	}
 
+	// create vwiredata
+	if(OptionsDlgExport->bWireFrame)
+		for(list<CMPND_DATA*>::iterator it = lstCMPData->begin(); it != lstCMPData->end(); it++)
+			CreateVWData((*it));
+
+
 	cDlgOptions dlgOptions (NULL);
 	dlgOptions.SetOptions(OptionsDlgExport);
 	dlgOptions.SetCMPNDData(lstCMPData);
@@ -972,52 +1075,6 @@ int	maxCMPExport::DoExport(const TCHAR *export_filename,ExpInterface *ei,Interfa
 	return 1;
 }
 
-BOOL maxCMPExport::nodeEnum(INode* node) 
-{	if(exportSelected && node->Selected() == FALSE)
-	return TREE_CONTINUE;
-
-	nCurNode++;
-
-	if (ip->GetCancel())
-	return FALSE;
-
-	if (node->IsGroupHead())
-	{
-	}
-	if(!exportSelected || node->Selected()) 
-	{
-		ObjectState os = node->EvalWorldState(0); 
-		if (os.obj) 
-		{
-			// We look at the super class ID to determine the type of the object.
-			switch(os.obj->SuperClassID()) {
-			case GEOMOBJECT_CLASS_ID: 
-				if (os.obj->SuperClassID()==GEOMOBJECT_CLASS_ID); 
-				break;
-			}
-		}
-	}
-	for (int c = 0; c < node->NumberOfChildren(); c++) {
-		if (!nodeEnum(node->GetChildNode(c)))
-		return FALSE;
-	}
-	if (node->IsGroupHead()) {
-	}
-	return TRUE;
-}
-void maxCMPExport::PreProcess(INode* node, int& nodeCount)
-{	nodeCount++;
-	// Add the nodes material to out material list
-	// Null entries are ignored when added...
-	//mtlList.AddMtl(node->GetMtl());
-
-	// For each child of this node, we recurse into ourselves 
-	// and increment the counter until no more children are found.
-	for (int c = 0; c < node->NumberOfChildren(); c++) {
-		PreProcess(node->GetChildNode(c), nodeCount);
-	}
-
-}
 BOOL maxCMPExport::SupportsOptions(int ext, DWORD options) {
 	assert(ext == 0);	// We only support one extension
 	return(options == SCENE_EXPORT_SELECTED) ? TRUE : FALSE;

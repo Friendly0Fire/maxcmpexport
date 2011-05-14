@@ -97,14 +97,19 @@ struct sObjInfo
 };
 //-------------------------------------------------------------------------------------------
 // VMeshData structures
+
+struct Line {
+	unsigned short v1, v2;
+};
+
 struct VWireData
 {
-	uint StructSize;
-	uint VWireDataID;
+	uint StructSize; // 16 dec
+	uint VMeshLibID;
 	unsigned short VertBase;
 	unsigned short VertQuant;
 	unsigned short RefVertQuant;
-	unsigned short VertRabge;
+	unsigned short VertRange;
 };
 struct VWireMesh {
 	int start_vertex, end_vertex, num_triangles;
@@ -260,12 +265,14 @@ struct LOD_DATA
 	VMESHDATA_FILE* vmeshdata_file;
 	VMeshRef vmeshref;
 	list<SMESH*> meshes;
+	bool bUseAsWireframe;
 };
 
 struct THREEDB_DATA
 {
 	string sFileName; 
 	uint iLODs;
+	uint iLODWireframe;
 	LOD_DATA data[MAX_LODS];
 };
 

@@ -30,5 +30,5 @@ protected:
 public:
 	EXPORT_CMPNT_OPTION eRadioCmpnts;
 	FVF_TYPE eFVFtype;
-	bool bWireFrame;
+	BOOL bWireFrame;
 };
