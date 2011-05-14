@@ -26,10 +26,11 @@
 #define IDC_TANGENTS                    1027
 #define IDC_CMPNT_NONE                  1030
 #define IDC_CMPNT_RELOCATE              1031
-#define IDC_CMPNT_NORELOCATE            1033
+#define IDC_CMPNT_NORELOCATE            1032
 #define IDC_COMBO1                      1039
 #define IDC_COMBOBOXEX1                 1040
 #define IDC_COMBO2                      1040
+#define IDC_VERTEXTYPE                  1040
 #define IDC_VCOLOR                      1042
 #define IDC_TAB1                        1044
 #define IDC_CHECK1                      1045
