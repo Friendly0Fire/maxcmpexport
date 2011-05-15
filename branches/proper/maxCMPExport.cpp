@@ -290,7 +290,7 @@ const TCHAR *maxCMPExport::ShortDesc()
 const TCHAR *maxCMPExport::AuthorName()
 {			
 	//TODO: Return ASCII Author name
-	return _T("w0dk4 et al");
+	return _T("w0dk4 & SilentAssassin82");
 }
 const TCHAR *maxCMPExport::CopyrightMessage() 
 {	
