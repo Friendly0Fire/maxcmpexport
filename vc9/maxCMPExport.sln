@@ -9,6 +9,8 @@ Global
 		Debug|x64 = Debug|x64
 		Hybrid|Win32 = Hybrid|Win32
 		Hybrid|x64 = Hybrid|x64
+		Release 2010|Win32 = Release 2010|Win32
+		Release 2010|x64 = Release 2010|x64
 		Release|Win32 = Release|Win32
 		Release|x64 = Release|x64
 	EndGlobalSection
@@ -21,6 +23,10 @@ Global
 		{E7CB76AA-6113-46BA-8EBC-8AE1D2B81210}.Hybrid|Win32.Build.0 = Hybrid|Win32
 		{E7CB76AA-6113-46BA-8EBC-8AE1D2B81210}.Hybrid|x64.ActiveCfg = Hybrid|x64
 		{E7CB76AA-6113-46BA-8EBC-8AE1D2B81210}.Hybrid|x64.Build.0 = Hybrid|x64
+		{E7CB76AA-6113-46BA-8EBC-8AE1D2B81210}.Release 2010|Win32.ActiveCfg = Release 2010|Win32
+		{E7CB76AA-6113-46BA-8EBC-8AE1D2B81210}.Release 2010|Win32.Build.0 = Release 2010|Win32
+		{E7CB76AA-6113-46BA-8EBC-8AE1D2B81210}.Release 2010|x64.ActiveCfg = Release 2010|x64
+		{E7CB76AA-6113-46BA-8EBC-8AE1D2B81210}.Release 2010|x64.Build.0 = Release 2010|x64
 		{E7CB76AA-6113-46BA-8EBC-8AE1D2B81210}.Release|Win32.ActiveCfg = Release|Win32
 		{E7CB76AA-6113-46BA-8EBC-8AE1D2B81210}.Release|Win32.Build.0 = Release|Win32
 		{E7CB76AA-6113-46BA-8EBC-8AE1D2B81210}.Release|x64.ActiveCfg = Release|x64

@@ -103,19 +103,19 @@ BOOL cDlgOptions::OnInitDialog()
 					// set data entry for "File name"
 					char * CR_filename_data = (char *) malloc ( (*itcmpnd)->object_data->sFileName.size() + 4);
 					strcpy (CR_filename_data + 4, (*itcmpnd)->object_data->sFileName.c_str());	// 4 = int position at beginning
-					*(size_t *)CR_filename_data = (*itcmpnd)->object_data->sFileName.size() + 4;	
+					*(unsigned int *)CR_filename_data = (uint)(*itcmpnd)->object_data->sFileName.size();	
 					tree->SetItemData(CR_filename, (DWORD_PTR)CR_filename_data);
 				HTREEITEM CR_index = utf->AddNewNode(tree, Cmpnd_item, "Index");
 					// set data entry for "Index"
 					int * CR_index_data = (int *)malloc (sizeof(int) + 4);
-					CR_index_data[0] = 4;	// size = 8 (1 integer + size data)
+					CR_index_data[0] = 4;	// size = 4 (1 integer )
 					CR_index_data[1] = (*itcmpnd)->index;
 					tree->SetItemData(CR_index, (DWORD_PTR)CR_index_data);
 				HTREEITEM CR_objname = utf->AddNewNode(tree, Cmpnd_item, "Object name");
 					// set data entry for "Object name"
 					char * CR_objname_data = (char *) malloc ( (*itcmpnd)->sObjectName.size() + 4);
 					strcpy (CR_objname_data + 4, (*itcmpnd)->sObjectName.c_str());
-					*(size_t *)CR_objname_data = (*itcmpnd)->sObjectName.size() + 4;
+					*(unsigned int *)CR_objname_data = (uint)(*itcmpnd)->sObjectName.size();
 					tree->SetItemData(CR_objname, (DWORD_PTR)CR_objname_data);
 
 
