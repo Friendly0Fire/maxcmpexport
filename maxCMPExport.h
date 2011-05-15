@@ -51,7 +51,7 @@ using namespace std;
 
 #define CFGFILENAME		_T("maxCMPExport.CFG")
 #define CMPEXPORT_VERSION 0.9
-#define MAX_LODS 6
+#define MAX_LODS 7
 
 typedef unsigned int uint;
 
