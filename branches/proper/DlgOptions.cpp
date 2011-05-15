@@ -101,9 +101,9 @@ BOOL cDlgOptions::OnInitDialog()
 			HTREEITEM Cmpnd_item = utf->AddNewNode(tree, Cmpnd, (char*)(*itcmpnd)->sName.c_str());
 				HTREEITEM CR_filename = utf->AddNewNode(tree, Cmpnd_item, "File name");
 					// set data entry for "File name"
-					char * CR_filename_data = (char *) malloc ( (*itcmpnd)->object_data->sFileName.size() + 4);
+					char * CR_filename_data = (char *) malloc ( (*itcmpnd)->object_data->sFileName.size() + 1 + 4);
 					strcpy (CR_filename_data + 4, (*itcmpnd)->object_data->sFileName.c_str());	// 4 = int position at beginning
-					*(unsigned int *)CR_filename_data = (uint)(*itcmpnd)->object_data->sFileName.size();	
+					*(unsigned int *)CR_filename_data = (uint)(*itcmpnd)->object_data->sFileName.size() + 1;	
 					tree->SetItemData(CR_filename, (DWORD_PTR)CR_filename_data);
 				HTREEITEM CR_index = utf->AddNewNode(tree, Cmpnd_item, "Index");
 					// set data entry for "Index"
@@ -113,9 +113,9 @@ BOOL cDlgOptions::OnInitDialog()
 					tree->SetItemData(CR_index, (DWORD_PTR)CR_index_data);
 				HTREEITEM CR_objname = utf->AddNewNode(tree, Cmpnd_item, "Object name");
 					// set data entry for "Object name"
-					char * CR_objname_data = (char *) malloc ( (*itcmpnd)->sObjectName.size() + 4);
+					char * CR_objname_data = (char *) malloc ( (*itcmpnd)->sObjectName.size() + 1 + 4);
 					strcpy (CR_objname_data + 4, (*itcmpnd)->sObjectName.c_str());
-					*(unsigned int *)CR_objname_data = (uint)(*itcmpnd)->sObjectName.size();
+					*(unsigned int *)CR_objname_data = (uint)(*itcmpnd)->sObjectName.size() + 1;
 					tree->SetItemData(CR_objname, (DWORD_PTR)CR_objname_data);
 
 
@@ -130,8 +130,24 @@ BOOL cDlgOptions::OnInitDialog()
 
 				HTREEITEM Cmpnd_multilevel = utf->AddNewNode(tree, Cmpnd_threedb, "MultiLevel");
 
+
+				if((*itcmpnd)->object_data->iLODs > 1)
+				{
+					// Switch2 float array
+					HTREEITEM Cmpnd_multilevel_switch2 = utf->AddNewNode(tree, Cmpnd_multilevel, "Switch2");
+					uint iSwitch2Size = 4*(*itcmpnd)->object_data->iLODs + 4 + 4;
+					char* Cmpnd_multilevel_switch2_data = (char *) malloc (iSwitch2Size);
+					*(uint*)Cmpnd_multilevel_switch2_data = iSwitch2Size - 4;
+					*(float*)(Cmpnd_multilevel_switch2_data + 4) = 0;
+					for(uint iLOD = 1; iLOD < (*itcmpnd)->object_data->iLODs; iLOD++)
+						*(float*)(Cmpnd_multilevel_switch2_data + 4 + iLOD*4) = pow(10.0f,(float)iLOD+1);
+					*(float*)(Cmpnd_multilevel_switch2_data + 4 + (*itcmpnd)->object_data->iLODs*4) = 1000000;		
+					tree->SetItemData(Cmpnd_multilevel_switch2, (DWORD_PTR)Cmpnd_multilevel_switch2_data);		
+				}
+
 				for(uint iLOD = 0; iLOD < (*itcmpnd)->object_data->iLODs; iLOD++)
 				{
+
 					string sLevel = "Level";
 					sLevel += (char)(48 + iLOD);
 						HTREEITEM Cmpnd_lodlevel = utf->AddNewNode(tree, Cmpnd_multilevel, (char*)sLevel.c_str());
@@ -139,7 +155,7 @@ BOOL cDlgOptions::OnInitDialog()
 								HTREEITEM Cmpnd_VMeshRef = utf->AddNewNode(tree, Cmpnd_VMeshPart, "VMeshRef");
 									char* Cmpdn_vmeshref_data = (char *) malloc ( sizeof(VMeshRef) + 4);
 									*(VMeshRef*)(Cmpdn_vmeshref_data+4) = (*itcmpnd)->object_data->data[iLOD].vmeshref;
-									*(int*)Cmpdn_vmeshref_data = sizeof(VMeshRef);
+									*(uint*)Cmpdn_vmeshref_data = sizeof(VMeshRef);
 									tree->SetItemData(Cmpnd_VMeshRef, (DWORD_PTR)Cmpdn_vmeshref_data);
 				}
 			
@@ -147,7 +163,6 @@ BOOL cDlgOptions::OnInitDialog()
 	
 	
 	utf->Save(tree, fileName);
-
 
 	return TRUE;
 }
@@ -166,8 +181,23 @@ void cDlgOptions::OnClose()
 
 void cDlgOptions::OnCancel()
 {
-//	utf->DestroyTree(tree);
-//	delete utf;
+	// clean up memory
+
+	utf->DestroyTree(tree); // FFS for whatever reason this doesnt work??? oh well, we've got enough memory thesedays for a "little" memory leak
+
+	delete utf;
+
+	for(list<VMESHDATA_FILE*>::iterator it = lstVMeshData->begin(); it != lstVMeshData->end(); it++)
+		delete (*it);
+	delete lstVMeshData;
+
+	for(list<CMPND_DATA*>::iterator itcmpnd = lstCMPData->begin(); itcmpnd != lstCMPData->end(); itcmpnd++)
+	{
+		delete (*itcmpnd)->object_data;
+		delete (*itcmpnd);
+	}
+	delete lstCMPData;
+
 
 	CDialog::OnCancel();
 }

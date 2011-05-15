@@ -364,16 +364,13 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 
 	cmpnd->object_data->iLODWireframe = 0;
 
-	uint iNumVerts = 0;
-	uint iNumFaces = 0;
-
 	int iLODS = 0;
 
 	for(int nNodeLOD = 0; nNodeLOD < pRootGrp->GetChildCount(); nNodeLOD++)
 	{
 		IGameNode* cur_lodnode = pRootGrp->GetNodeChild(nNodeLOD);
 
-		uint iLOD = 0; // standard
+		uint iLOD = 0;
 
 		if(cur_lodnode->IsGroupOwner())
 		{
@@ -381,7 +378,7 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 			iLOD = ((int)cur_lodnode->GetName()[(strlen(cur_lodnode->GetName())-1)]) - 48;
 			if(iLOD > (MAX_LODS-1))
 			{
-				MessageBox(0,"You have specified a higher LOD number than supported (0 to 5)","Error exporting LOD",MB_ICONERROR);
+				MessageBox(0,"You have specified a higher LOD number than supported (0 to 6)","Error exporting LOD",MB_ICONERROR);
 				continue; // ignore
 			}
 			if(string(cur_lodnode->GetName()).substr(0,3) == "vwd")
@@ -394,7 +391,10 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 		}
 
 		iLODS++;
-
+		
+		// this is per vmeshpart (per lod)
+		uint iNumVerts = 0;
+		uint iNumFaces = 0;
 
 		// save meshes
 		for(int nNode = 0; nNode < cur_lodnode->GetChildCount(); nNode++)
@@ -555,7 +555,7 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 	// write cons data
 	if(cmpnd->sObjectName != "Root")
 	{
-		if(cmpnd->sObjectName.substr(cmpnd->sObjectName.length()-4, cmpnd->sObjectName.length()) == ".rev")
+		if(cmpnd->sObjectName.length() > 4 && cmpnd->sObjectName.substr(cmpnd->sObjectName.length()-4, cmpnd->sObjectName.length()) == ".rev")
 		{
 			PartRev revdata; memset(&revdata, 0, sizeof(PartRev));
 			strcpy(revdata.ParentName, "Root");
@@ -572,7 +572,7 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 
 			fwrite(&revdata, sizeof(revdata), 1, revnode);
 
-		} else if(cmpnd->sObjectName.substr(cmpnd->sObjectName.length()-4, cmpnd->sObjectName.length()) == ".pris")
+		} else if(cmpnd->sObjectName.length() > 4 && cmpnd->sObjectName.substr(cmpnd->sObjectName.length()-4, cmpnd->sObjectName.length()) == ".pris")
 		{
 			PartRev prisdata; memset(&prisdata, 0, sizeof(PartRev));
 			strcpy(prisdata.ParentName, "Root");
@@ -691,6 +691,7 @@ void maxCMPExport::CreateVWData(CMPND_DATA* cmpnd)
 	fwrite(lines, sizeof(Line), num_lines, fVWire);
 	fclose(fVWire);
 
+	free(lines);
 }
 
 
@@ -815,14 +816,14 @@ bool maxCMPExport::ExportGroup(IGameNode * pRootGrp, string sExportFilename)
 					(*itcmpnd)->object_data->data[iLOD].vmeshref.Start_Vert = iGlobalStartVertex;
 					(*itcmpnd)->object_data->data[iLOD].vmeshref.Start_Index = iGlobalStartIndex;
 
-					uint iStartVert = 0; // this is per cmpnd
+					uint iStartVert = 0; // this is per vmeshpart
 
 					for(list<SMESH*>::iterator itmesh = (*itcmpnd)->object_data->data[iLOD].meshes.begin(); itmesh != (*itcmpnd)->object_data->data[iLOD].meshes.end(); itmesh++)
 					{
 						vmsMesh vmesh;
 						vmesh.material = fl_crc32((char*)(*itmesh)->sMaterial.c_str());
 						vmesh.start_vert_number = iStartVert;
-						vmesh.end_vert_number = iStartVert + (*itmesh)->nVerts;
+						vmesh.end_vert_number = (iStartVert + (*itmesh)->nVerts) - 1;
 						vmesh.number_of_vert_references = (*itmesh)->nTris*3;
 						vmesh.padding = 0xcc;
 						
@@ -972,6 +973,7 @@ bool maxCMPExport::ExportGroup(IGameNode * pRootGrp, string sExportFilename)
 	}
 
 	// create vwiredata
+	iTotalVWireIndices = 0;
 	if(OptionsDlgExport->bWireFrame)
 		for(list<CMPND_DATA*>::iterator it = lstCMPData->begin(); it != lstCMPData->end(); it++)
 			CreateVWData((*it));
