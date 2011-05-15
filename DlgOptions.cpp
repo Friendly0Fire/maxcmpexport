@@ -183,7 +183,7 @@ void cDlgOptions::OnCancel()
 {
 	// clean up memory
 
-	utf->DestroyTree(tree); // FFS for whatever reason this doesnt work??? oh well, we've got enough memory thesedays for a "little" memory leak
+	utf->DestroyTree(tree);
 
 	delete utf;
 
