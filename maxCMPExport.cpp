@@ -410,6 +410,14 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 				mesh->pMesh->InitializeData();
 				mesh->pMesh->InitializeBinormalData();
 
+				int nTris = mesh->pMesh->GetNumberOfFaces();
+				// failsave if there is no geometry
+				if(!nTris)
+				{
+					delete mesh;
+					continue;
+				}
+
 				// material
 				IGameMaterial *pMaterial = cur_node->GetNodeMaterial();
 				if(pMaterial==NULL)
@@ -427,7 +435,6 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 				mesh->sName = string(cur_node->GetName());
 
 				// vertices
-				int nTris = mesh->pMesh->GetNumberOfFaces();
 				mesh->t = new vmsTri[nTris];
 				int nVerts = nTris*3;
 				mesh->v = new vmsVert[nVerts];
