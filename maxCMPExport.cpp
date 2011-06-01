@@ -351,12 +351,16 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 		if(OptionsDlgExport->eRadioCmpnts == EXPORT_CMPNT_RELOCATE)
 		{
 			Point3 objoffset = pRootGrp->GetMaxNode()->GetObjOffsetPos();
+			// for whatever reason the objoffset seems to be in a wrong coordinate system
+			float fSwap = objoffset.y;
+			objoffset.y = -objoffset.z;
+			objoffset.z = fSwap;
 
 			Box3 BoundsRoot;
 			pRootGrp->GetIGameObject()->GetBoundingBox(BoundsRoot);
 			Point3 objcenter = BoundsRoot.Center();
 			
-			vOffset = objcenter - objoffset;
+			vOffset = objcenter + objoffset;
 		}
 	}
 
@@ -572,10 +576,15 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 			revdata.OriginY = vOffset.y;
 			revdata.OriginZ = vOffset.z;
 
-			// identity matrix
+			// identity matrix (-> no rotation)
 			revdata.RotMatXX = 1;
 			revdata.RotMatYY = 1;
 			revdata.RotMatZZ = 1;
+
+			// fill in some standard values for axis rotate and min/max angles so that the component shows up ingame (doesnt if its zero)
+			revdata.AxisRotZ = 1;
+			revdata.Max = 360;
+
 
 			fwrite(&revdata, sizeof(revdata), 1, revnode);
 
@@ -589,10 +598,14 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 			prisdata.OriginY = vOffset.y;
 			prisdata.OriginZ = vOffset.z;
 
-			// identity matrix
+			// identity matrix (-> no rotation)
 			prisdata.RotMatXX = 1;
 			prisdata.RotMatYY = 1;
 			prisdata.RotMatZZ = 1;
+
+			// fill in some standard values for axis rotate and min/max angles so that the component shows up ingame (doesnt if its zero)
+			prisdata.AxisRotZ = 1;
+			prisdata.Max = 360;
 
 			fwrite(&prisdata, sizeof(prisdata), 1, prisnode);
 
