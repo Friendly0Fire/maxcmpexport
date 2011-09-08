@@ -17,6 +17,10 @@
 
 #include "stdafx.h"
 
+#include <string>
+#include <list>
+using namespace std;
+
 
 #if _MSC_VER > 1000
 
@@ -42,9 +46,13 @@
 #include "utilapi.h"
 #include "igame.h"
 #include "igameobject.h"
+#include "notify.h"
 //SIMPLE TYPE
 
+
 #define CFGFILENAME		_T("maxCMPExport.CFG")
+#define CMPEXPORT_VERSION 0.9
+#define MAX_LODS 7
 
 typedef unsigned int uint;
 
@@ -55,12 +63,21 @@ struct FileName_
 
 enum EXPORT_CMPNT_OPTION
 {
-	EXPORT_CMPNT_NONE = 0,
-	EXPORT_CMPNT_RELOCATE = 1,
-	EXPORT_CMPNT_NORELOCATE = 2		
+	EXPORT_CMPNT_RELOCATE = 0,
+	EXPORT_CMPNT_NORELOCATE = 1,
+	EXPORT_CMPNT_FORCE_DWORD = 0x7FFFFFFF
 };
 
-
+enum FVF_TYPE
+{
+	FVF_NORMAL,
+	FVF_VERTEXARGB,
+	FVF_VERTEXARGB_NORMALS,
+	FVF_EXTRAUV,
+	FVF_TANGENTS,
+	FVF_EXTRAUV_TANGENTS,
+	FVF_TYPE_FORCE_DWORD = 0x7FFFFFFF
+};
 
 unsigned int fl_crc32(char *);
 
@@ -81,50 +98,31 @@ struct sObjInfo
 };
 //-------------------------------------------------------------------------------------------
 // VMeshData structures
+
+struct Line {
+	unsigned short v1, v2;
+};
+
 struct VWireData
 {
-	uint StructSize;
-	uint VWireDataID;
+	uint StructSize; // 16 dec
+	uint VMeshLibID;
 	unsigned short VertBase;
 	unsigned short VertQuant;
 	unsigned short RefVertQuant;
-	unsigned short VertRabge;
+	unsigned short VertRange;
 };
 struct VWireMesh {
 	int start_vertex, end_vertex, num_triangles;
 };
+
 struct vmsVert
 {
 	Point3 vert;
 	Point3 normal;
-	Point2 uv;
-};
-struct gvmsVert
-{
-	Point3 gvert;
-	Point3 gnormal;
-	Point2 guv;
-};
-struct gvmsVertEnh
-{
-	Point3 gvert;
-	Point3 gnormal;
-	Point2 guv;
-	Point3 gtangent;
-	Point3 gbinormal;
-};
-struct vmsVertUV
-{
-	Point3 vert;
-	Point3 normal;
+	uint diffuse;
 	Point2 uv;
 	Point2 uv2;
-};
-struct vmsVertEnh
-{
-	Point3 vert;
-	Point3 normal;
-	Point2 uv;
 	Point3 tangent;
 	Point3 binormal;
 };
@@ -142,10 +140,10 @@ struct mSplineKnot
 {
 	unsigned short SVertice[3];
 };
-struct VMeshRefBounds
+struct VMeshRef
 {
 	uint Header_Size; // 0x0000003C
-	uint VMesh_LibId; // crc of 3db name
+	uint VMesh_LibId; // crc of vmeshdata name
 	unsigned short Start_Vert;
 	unsigned short Num_Vert;
 	unsigned short Start_Index;
@@ -161,37 +159,11 @@ struct VMeshRefBounds
 	float Center_X;
     float Center_Y;
 	float Center_Z;
- 	//Point3 v_Center;
 	float _Radius;
 
 };
 
-struct gvmsVertColor
-{
- Point3 gvert;
- uint gdiffuse; // (4 bytes alpha-r-g-b or might be alpha-b-g-r)
- Point2 guv;
-};
-struct gvmsVertColorEnh
-{
- Point3 gvert;
- Point3 gnormal;
- uint gdiffuse; // (4 bytes alpha-r-g-b or might be alpha-b-g-r)
- Point2 guv;
-};
-struct vmsVertColor
-{
- Point3 vert;
- uint diffuse; // (4 bytes alpha-r-g-b or might be alpha-b-g-r)
- Point2 uv;
-};
-struct vmsVertColorEnh
-{
- Point3 vert;
- Point3 normal;
- uint diffuse; // (4 bytes alpha-r-g-b or might be alpha-b-g-r)
- Point2 uv;
-};
+
 struct vmsTri
 {
 	unsigned short vertice[3];
@@ -209,14 +181,15 @@ struct vmsHeader
 struct vmsMesh
 {
 	unsigned int material;	// material ID is a CRC32 (with mod table) of the material name
-	short start_vert_number;
-	short end_vert_number;
-	short number_of_vert_references; // faces * 3;
+	unsigned short start_vert_number;
+	unsigned short end_vert_number;
+	unsigned short number_of_vert_references; // faces * 3;
 	short padding;	// = 0xcc, for dword allignment, apparently
 };
 
 struct GLIST
 {
+
 	TCHAR * glname ;
 	int NodeCount;
 	IGameNode *GroupMesh;
@@ -233,7 +206,6 @@ struct GroupA
 };
 struct ConsFix
 {
-	Point3 OriginXYZ;
 	uint cfParent;
 	uint cfChild;
 	float OriginX;
@@ -243,29 +215,7 @@ struct ConsFix
 	Point3 RotationY;
 	Point3 RotationZ;
 };
-struct VMeshRef
-{
-	// Header - one per lod for each .3db section of cmp - 60 bytes
-	uint HeaderSize; // 0x0000003C
-	uint VMeshLibId; // crc of 3db name
-	int StartVert;
-	unsigned short NumVert;
-	unsigned short StartIndex;
-	unsigned short NumIndex;
-	uint StartMesh;
-	uint NumMeshes;
-	float BoundingBoxMaxX;
-	float BoundingBoxMinX;
-	float BoundingBoxMaxY;
-	float BoundingBoxMinY;
-	float BoundingBoxMaxZ;
-	float BoundingBoxMinZ;
-    //float CenterX;
-    //float CenterY;
-	//float CenterZ;
- 	Point3 vCenter;
-	Point3 Radius;
-};
+
 struct sNodeInfo
 {
 	TCHAR *NodeName;
@@ -287,44 +237,105 @@ struct MSpline
 
 	//IGameMesh *pMesh; // 3ds max mesh object
 };
-struct GMMESH
-{
-	gvmsVertEnh * gv;	// vmsVert array
-	gvmsTri * gt;		// vmsTri array
-	VMeshRefBounds * gvmeshrefb;
-	VMeshRef * vmeshre;
-	gvmsVertColor * gvc;
-	gvmsVertColorEnh * gvcn;
-	int gnVerts;
-	int gnTris;
-	uint gNum_Meshes;
-	
-	TCHAR *  gmaterial;	// material name
-	TCHAR * gnname;	// mesh name
-	bool ghardpoint;	
-	VECTOR * gtri_normals;
 
-	IGameMesh *gpMesh; // 3ds max mesh object
-};
-struct MMESH
+struct SSMESH
 {
-	vmsVertEnh * v;	// vmsVert array
-	vmsVertUV * vu;
-	vmsTri * t;		// vmsTri array
-	VMeshRefBounds * vmeshrefb;
-	VMeshRef * vmeshre;
-	vmsVertColor * vc;
-	vmsVertColorEnh * vcn;
-	int nVerts;
-	int nTris;
-	uint Num_Meshes;
-	
-	TCHAR *  material;	// material name
-	TCHAR * nname;	// mesh name
-	bool hardpoint;	
-	VECTOR * tri_normals;
+	list<SSMESH*> smeshes;
+	string sMaterial;	// material name
+	string sName;	// mesh name
 
 	IGameMesh *pMesh; // 3ds max mesh object
+};
+struct SMESH
+{
+	vmsVert * v;	// vmsVert array
+	vmsTri * t;		// vmsTri array
+	int nVerts;
+	int nTris;
+	Tab<FaceEx*>nNTris;
+	
+	string sMaterial;	// material name
+	string sName;	// mesh name
+
+	IGameMesh *pMesh; // 3ds max mesh object
+};
+
+struct VMESHDATA_FILE
+{
+	string sFilename;
+	FILE* file;
+	uint nRefVertices;
+	uint nVertices;
+	uint nMeshes;
+};
+
+struct LOD_DATA
+{
+	VMESHDATA_FILE* vmeshdata_file;
+	VMeshRef vmeshref;
+	list<SMESH*> meshes;
+	bool bUseAsWireframe;
+};
+
+struct THREEDB_DATA
+{
+	string sFileName; 
+	uint iLODs;
+	uint iLODWireframe;
+	LOD_DATA data[MAX_LODS];
+};
+
+
+struct PartFix
+{
+     char ParentName[0x40];
+     char ChildName[0x40];
+     float OriginX;
+     float OriginY;
+     float OriginZ;
+     float RotMatXX;
+     float RotMatXY;
+     float RotMatXZ;
+     float RotMatYX;
+     float RotMatYY;
+     float RotMatYZ;
+     float RotMatZX;
+     float RotMatZY;
+     float RotMatZZ;
+};
+
+struct PartRev
+{
+     char ParentName[0x40];
+     char ChildName[0x40];
+     float OriginX;
+     float OriginY;
+     float OriginZ;
+	 float OffsetX;
+	 float OffsetY;
+     float OffsetZ;
+     float RotMatXX;
+     float RotMatXY;
+     float RotMatXZ;
+     float RotMatYX;
+     float RotMatYY;
+     float RotMatYZ;
+     float RotMatZX;
+     float RotMatZY;
+     float RotMatZZ;
+	 float AxisRotX;
+	 float AxisRotZ;
+     float AxisRotY;
+     float Min;
+     float Max;
+};
+
+struct CMPND_DATA
+{
+	string sName;
+	string sObjectName;
+	THREEDB_DATA* object_data;
+	int index;
 };
 
 
@@ -372,7 +383,5 @@ extern PlugPanel thePlugPanel;
 extern TCHAR *GetString(int id);
 
 extern HINSTANCE hInstance;
-
-
 
 #endif

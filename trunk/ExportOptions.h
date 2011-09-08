@@ -1,5 +1,6 @@
 #pragma once
 #include "afxwin.h"
+#include "maxcmpexport.h"
 
 
 // ExportOptions-Dialogfeld
@@ -27,14 +28,7 @@ protected:
 
 	DECLARE_MESSAGE_MAP()
 public:
-	BOOL bTangents;
-	BOOL bVColor;
-	BOOL bWireFrame;
-	BOOL bVuvm2;
-	BOOL bVColorEnh;
 	EXPORT_CMPNT_OPTION eRadioCmpnts;
-	int iLOD;
-	afx_msg void OnBnClickedTangents();
-	afx_msg void OnBnClickedVcolor();
-
+	FVF_TYPE eFVFtype;
+	BOOL bWireFrame;
 };

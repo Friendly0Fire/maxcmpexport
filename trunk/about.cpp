@@ -35,7 +35,7 @@ ShowAbout::ShowAbout(CWnd* pParent /*=NULL*/)
 
 void ShowAbout::DoDataExchange(CDataExchange* pDX)
 {
-	ShowAbout::DoDataExchange(pDX);
+//	ShowAbout::DoDataExchange(pDX);
 	//{{AFX_DATA_MAP(CAbout)
 		// NOTE: the ClassWizard will add DDX and DDV calls here
 	//}}AFX_DATA_MAP
