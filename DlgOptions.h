@@ -9,6 +9,7 @@
 
 #include "maxCMPExport.h"
 #include "ExportOptions.h"
+#include "ExportOptions.h"
 
 #include <list>
 using namespace std;
@@ -32,34 +33,23 @@ class cDlgOptions : public CDialog
 private:
     int     m_nFlags;
     CString m_sPathName;
-
-
-	list<MMESH *> * meshList;
-	list<GLIST *> * nodeList;
 	
 	char fileName[1000];
 	
 	int create_vwiredata(HTREEITEM, const TCHAR* nameInList);
 	void create_hardpoints(HTREEITEM);
 	
-	void calculate_position( float * pos, MMESH * mesh);
 	void calculate_orientation( float * matrix, float * pos, char * name);
 	int VertQuantity();
 	
-	
+	list<CMPND_DATA*>* lstCMPData;
+	list<VMESHDATA_FILE*>* lstVMeshData;
 
-	EXPORT_CMPNT_OPTION cmpnt_mode;
+	ExportOptions* OptionsDlgExport;
 
 public:
 	
 	cDlgOptions(CWnd* pParent = NULL);
-	int num_meshes();
-	int iLODs;
-	int sWire;
-	
-
-public:
-
 	
 	CTreeCtrl * tree;
 	UTF * utf;
@@ -67,12 +57,10 @@ public:
 	UTF * utf2;
     CString GetPathName ();
     int GetOptionFlags ();
-	void SetMesh(list<MMESH *> *);
-	void SetGroup(list<GLIST *> *);
+	void SetCMPNDData(list<CMPND_DATA*>* cmp_data) { this->lstCMPData = cmp_data; };
+	void SetVMeshData(list<VMESHDATA_FILE*>* vmesh_data) { this->lstVMeshData = vmesh_data; };
 	void SetFileName(char * fileName);
-	void SetComponentMode(EXPORT_CMPNT_OPTION);
-	void SetLODs(int);
-	void SetWire(int);
+	void SetOptions(ExportOptions* options) { OptionsDlgExport = options; };
 	int create_groups(HTREEITEM, GLIST * glist);
 	
 	//{{AFX_VIRTUAL(cDlgOptions)
@@ -83,6 +71,7 @@ public:
 protected:
 
 	//{{AFX_MSG(cDlgOptions)
+	void AddFileAsNode(HTREEITEM parent, const char* szFileName, const char* szNodeName);
 	virtual BOOL OnInitDialog();
 	afx_msg void OnClose();
 	virtual void OnCancel();
