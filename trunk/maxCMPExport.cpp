@@ -538,8 +538,6 @@ int maxCMPExport::NodeProcess()
 			}
 		}
 	}
-	RegroupByMatID();
-
 	return 1;
 }
 
@@ -697,7 +695,8 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 
 						mesh->v[nVert].vert = vertice;
 						mesh->v[nVert].normal = normal;
-						mesh->v[nVert].uv = uv;
+						mesh->v[nVert].uv.x = uv.x;
+						mesh->v[nVert].uv.y = -uv.y;
 						
 						int iTBindex = mesh->pMesh->GetFaceVertexTangentBinormal(pTriangle->meshFaceIndex, i);
 						if(iTBindex != -1)
@@ -714,7 +713,8 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 							alpha = mesh->pMesh->GetAlphaVertex(pTriangle->alpha[i]);
 							color = mesh->pMesh->GetColorVertex(pTriangle->color[i]);
 							mesh->v[nVert].diffuse = (DWORD)(alpha * 255)<<24 | (DWORD)(color.x * 255)<<16 | (DWORD)(color.y *255)<<8 | (DWORD)(color.z * 255);
-							mesh->v[nVert].uv = uv;
+							mesh->v[nVert].uv.x = uv.x;
+							mesh->v[nVert].uv.y = -uv.y;
 						}
 						else
 						{

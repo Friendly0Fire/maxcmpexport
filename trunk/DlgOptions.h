@@ -9,7 +9,6 @@
 
 #include "maxCMPExport.h"
 #include "ExportOptions.h"
-#include "ExportOptions.h"
 
 #include <list>
 using namespace std;
