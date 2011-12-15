@@ -34,6 +34,7 @@ void ExportOptions::DoDataExchange(CDataExchange* pDX)
 
 BEGIN_MESSAGE_MAP(ExportOptions, CDialog)
 
+	ON_BN_CLICKED(IDOK, &ExportOptions::OnBnClickedOk)
 END_MESSAGE_MAP()
 
 // ExportOptions-Meldungshandler
@@ -53,3 +54,9 @@ void ExportOptions::OnCancel()
 	bDoExport = false;
 }
 
+
+void ExportOptions::OnBnClickedOk()
+{
+	// TODO: Add your control notification handler code here
+	OnOK();
+}
