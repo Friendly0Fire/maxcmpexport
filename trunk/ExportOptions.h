@@ -31,5 +31,4 @@ public:
 	EXPORT_CMPNT_OPTION eRadioCmpnts;
 	FVF_TYPE eFVFtype;
 	BOOL bWireFrame;
-	afx_msg void OnBnClickedOk();
 };
