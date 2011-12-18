@@ -695,9 +695,8 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 
 						mesh->v[nVert].vert = vertice;
 						mesh->v[nVert].normal = normal;
-						mesh->v[nVert].uv.x = uv.x;
-						mesh->v[nVert].uv.y = -uv.y;
-						
+						mesh->v[nVert].uv = uv;
+					
 						int iTBindex = mesh->pMesh->GetFaceVertexTangentBinormal(pTriangle->meshFaceIndex, i);
 						if(iTBindex != -1)
 						{
@@ -713,8 +712,7 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 							alpha = mesh->pMesh->GetAlphaVertex(pTriangle->alpha[i]);
 							color = mesh->pMesh->GetColorVertex(pTriangle->color[i]);
 							mesh->v[nVert].diffuse = (DWORD)(alpha * 255)<<24 | (DWORD)(color.x * 255)<<16 | (DWORD)(color.y *255)<<8 | (DWORD)(color.z * 255);
-							mesh->v[nVert].uv.x = uv.x;
-							mesh->v[nVert].uv.y = -uv.y;
+							mesh->v[nVert].uv = uv;
 						}
 						else
 						{
@@ -745,12 +743,15 @@ bool maxCMPExport::CreateCMPData(IGameNode * pRootGrp, list<CMPND_DATA*>* lstCMP
 		cmpnd->object_data->data[iLOD].vmeshref.bminx = Bounds.pmin.x;
 		cmpnd->object_data->data[iLOD].vmeshref.bminy = Bounds.pmin.y;
 		cmpnd->object_data->data[iLOD].vmeshref.bminz = Bounds.pmin.z;
-		cmpnd->object_data->data[iLOD].vmeshref.Center_X = Bounds.Center().x;
-		cmpnd->object_data->data[iLOD].vmeshref.Center_Y = Bounds.Center().y;
-		cmpnd->object_data->data[iLOD].vmeshref.Center_Z = Bounds.Center().z;
+		Point3 vCenter = Bounds.Center() - vOffset; // center in local component space
+		cmpnd->object_data->data[iLOD].vmeshref.Center_X = vCenter.x;
+		cmpnd->object_data->data[iLOD].vmeshref.Center_Y = vCenter.y;
+		cmpnd->object_data->data[iLOD].vmeshref.Center_Z = vCenter.z;
 		// radius is the distance from center to one bounding box point
-		Point3 radius_vec = Bounds.Width()/2;
-		cmpnd->object_data->data[iLOD].vmeshref._Radius = radius_vec.FLength();
+		Point3 radius_vec = Bounds.pmax - Bounds.Center();
+ 		// increase the radius by 25% as FLModelTool does the same
+ 		cmpnd->object_data->data[iLOD].vmeshref._Radius = radius_vec.FLength() * 1.25f; 
+
 
 		cmpnd->object_data->data[iLOD].vmeshref.Header_Size = 60;
 		cmpnd->object_data->data[iLOD].vmeshref.Num_Meshes = (unsigned short)cmpnd->object_data->data[iLOD].meshes.size();
@@ -950,9 +951,11 @@ void maxCMPExport::CreateVWData(CMPND_DATA* cmpnd)
 
 	if(iTotalVWireIndices > 16000)
 	{
-		string sError = "Your total indices count for the Wireframe exceeds Freelancer's limit of 16 000. Indices: ";
+
+		string sError = "Warning: Your total indices count for the Wireframe exceeds Freelancer's limit of 16 000. Indices: ";
 		sError += convertInt(iTotalVWireIndices);
-		MessageBox(0,sError.c_str(),"Error exporting VWireData",MB_ICONERROR);
+		MessageBox(0,sError.c_str(),"Warning exporting VWireData",MB_ICONERROR);
+
 	}
 
 	// write file
