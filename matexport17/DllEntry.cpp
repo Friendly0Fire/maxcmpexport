@@ -12,9 +12,9 @@
 // AUTHOR: 
 //***************************************************************************/
 
-#include "cmpexport17.h"
+#include "matexport17.h"
 
-extern ClassDesc2* Getcmpexport17Desc();
+extern ClassDesc2* Getmatexport17Desc();
 
 HINSTANCE hInstance;
 int controlsInit = FALSE;
@@ -37,6 +37,7 @@ int controlsInit = FALSE;
 	}
 	return(TRUE);
 }*/
+
 BOOL CMaxPlugInApp::InitInstance()
 {
 	HINSTANCE	hInstance;
@@ -48,6 +49,7 @@ BOOL CMaxPlugInApp::InitInstance()
 	// Hang on to this DLL's instance handle.
 	hInstance = AfxGetResourceHandle();
 	DisableThreadLibraryCalls(hInstance);
+
 
 	return TRUE;				//CWinApp::InitInstance();
 }
@@ -70,7 +72,7 @@ __declspec( dllexport ) int LibNumberClasses()
 __declspec( dllexport ) ClassDesc* LibClassDesc(int i)
 {
 	switch(i) {
-		case 0: return Getcmpexport17Desc();
+		case 0: return Getmatexport17Desc();
 		default: return 0;
 	}
 }
